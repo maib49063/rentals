@@ -8,122 +8,114 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- Подключаем жирный Inter для заголовков и JetBrains Mono для технического текста -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700;800&display=swap"
+        rel="stylesheet">
 
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <!-- МОБИЛЬНОЕ МЕНЮ (Оверлей) -->
+    <!-- МОБИЛЬНОЕ МЕНЮ -->
     <div class="mobile-menu-overlay" id="mobile-menu">
         <div class="mobile-menu-header">
-            <div class="logo">Ренталс</div>
-            <button class="btn-close-menu" id="close-menu">ЗАКРЫТЬ</button>
+            <div class="logo">РЕНТАЛС</div>
+            <button class="btn-close-menu mono" id="close-menu">[ ЗАКРЫТЬ ]</button>
         </div>
         <nav class="mobile-nav">
-            <a href="fleet.html">Автопарк</a>
+            <a href="fleet.html">АВТОПАРК</a>
             <a href="about.html">О нас</a>
-            <a href="contact.html">Контакты</a>
-            <a href="auth.html" id="mobile-auth-link" class="accent">Регистрация</a>
+            <a href="contact.html">СВЯЗЬ</a>
+            <a href="auth.html" id="mobile-auth-link" class="accent">РЕГИСТРАЦИЯ</a>
         </nav>
     </div>
 
     <main class="grid-container">
 
+        <!-- HEADER -->
         <header class="main-header">
-            <div class="header-logo"><a href="index.html">Ренталс</a></div>
+            <div class="header-logo"><a href="index.html">РЕНТАЛС</a></div>
 
             <nav class="header-nav">
-                <a href="fleet.html">Автопарк</a>
-                <a href="about.html">О нас</a>
+                <a href="fleet.html">АВТОПАРК</a>
+                <a href="about.html">О НАс</a>
                 <a href="contact.html">Контакты</a>
             </nav>
 
             <div class="header-auth">
-                <a href="auth.html" id="header-auth-link">Регистрация</a>
+                <a href="auth.html" id="header-auth-link" class="accent-link">Регистрация</a>
             </div>
 
-            <!-- Кнопка только для мобилок -->
-            <button class="mobile-menu-trigger" id="open-menu">МЕНЮ</button>
+            <button class="mobile-menu-trigger mono" id="open-menu">[ МЕНЮ ]</button>
         </header>
 
-        <!-- HERO СЕКЦИЯ -->
         <section class="hero">
-            <h1>Автомобиль<br>как функция.</h1>
-            <div class="hero-desc">
-                Мы отвергаем идею владения. Мы создаем чистую инфраструктуру движения. Машина больше не статус — это
-                инструмент достижения цели.
+            <h1>ОБЪЕКТИВНАЯ<br>ФУНКЦИЯ.</h1>
+        </section>
+
+        <!-- МАНИФЕСТ (СТРОГАЯ СЕТКА) -->
+        <section class="manifesto">
+            <article class="manifesto-row">
+                <div class="manifesto-num mono">01 /</div>
+                <h2 class="manifesto-title">ДВИЖЕНИЕ — ЭТО СТРОГАЯ СИСТЕМА.</h2>
+                <div class="manifesto-desc mono">
+                    ТРАНСПОРТНЫЙ ПОТОК НЕ ТЕРПИТ ХАОСА. МЫ ПРЕДОСТАВЛЯЕМ АЛГОРИТМИЧЕСКИ ВЫВЕРЕННЫЙ ИНСТРУМЕНТ ДЛЯ
+                    ПЕРЕМЕЩЕНИЯ БЕЗ ЭМОЦИОНАЛЬНОГО ШУМА И ИЗБЫТОЧНОСТИ.
+                </div>
+            </article>
+
+            <article class="manifesto-row">
+                <div class="manifesto-num mono">02 /</div>
+                <h2 class="manifesto-title">ВАШЕ ВРЕМЯ ИЗМЕРЯЕТСЯ В КИЛОМЕТРАХ.</h2>
+                <div class="manifesto-desc mono">
+                    НИКАКИХ СКРЫТЫХ СМЫСЛОВ. ТОЛЬКО ДИСТАНЦИЯ, СКОРОСТЬ И ЭФФЕКТИВНОСТЬ. АВТОМОБИЛЬ СВЕДЕН К ЕГО БАЗОВОЙ
+                    УТИЛИТАРНОЙ ФУНКЦИИ В ГОРОДСКОЙ СРЕДЕ.
+                </div>
+            </article>
+
+            <article class="manifesto-row">
+                <div class="manifesto-num mono">03 /</div>
+                <h2 class="manifesto-title">ТРАНСПОРТ ДОЛЖЕН БЫТЬ ОБЪЕКТИВНЫМ.</h2>
+                <div class="manifesto-desc mono">
+                    ОДИНАКОВЫЕ КУЗОВА. ИДЕНТИЧНЫЕ ИНТЕРФЕЙСЫ. АБСОЛЮТНАЯ ПРЕДСКАЗУЕМОСТЬ ОПЫТА. ЛИЧНОЕ ВЛАДЕНИЕ
+                    УПРАЗДНЕНО ЗА НЕНАДОБНОСТЬЮ.
+                </div>
+            </article>
+        </section>
+
+        <!-- ВИЗУАЛЬНЫЙ БЛОК + РЕГЛАМЕНТ -->
+        <section class="data-visual-section">
+            <div class="tech-reglament">
+                <div class="reglament-title mono">ТЕХНИЧЕСКИЙ РЕГЛАМЕНТ АРЕНДЫ</div>
+                <ul class="reglament-list mono">
+                    <li>> ДОПУСК: ОТ 21 ГОДА</li>
+                    <li>> ОПЫТ ОПЕРАТОРА: ОТ 2 ЛЕТ</li>
+                    <li>> ИДЕНТИФИКАЦИЯ: ПАСПОРТ, ВУ</li>
+                    <li>> РЕЖИМ СВЯЗИ: 24/7 ONLINE</li>
+                </ul>
+            </div>
+
+            <div class="visual-wrapper">
+                <div class="red-square"></div>
+                <!-- ЧБ высококонтрастное фото -->
+                <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?q=80&w=2000&auto=format&fit=crop"
+                    alt="Узел машины">
+                <div class="visual-caption mono">FIG. 01 — ОБЪЕКТ ТРАНСПОРТНОЙ ИНФРАСТРУКТУРЫ</div>
             </div>
         </section>
 
-        <!-- СЕКЦИЯ ПРИНЦИПОВ -->
-        <section class="principles">
-            <article class="principle-block">
-                <div class="principle-num">01</div>
-                <h2>Рациональность</h2>
-                <p>Мы исключаем эмоции из владения. Автомобиль — это строгая математическая модель перемещения из точки
-                    А в точку Б с максимальной эффективностью.</p>
-            </article>
-
-            <article class="principle-block">
-                <div class="principle-num">02</div>
-                <h2>Унификация</h2>
-                <p>Никакого визуального шума. Идеально белые кузова, единый стандарт обслуживания и абсолютная,
-                    бескомпромиссная предсказуемость опыта.</p>
-            </article>
-
-            <article class="principle-block">
-                <div class="principle-num">03</div>
-                <h2>Аскетизм</h2>
-                <p>Отказ от лишнего. В вашем распоряжении только руль, педали и интерфейс. Настоящая роскошь заключается
-                    в пустоте и отсутствии необходимости обслуживать механизм.</p>
-            </article>
-        </section>
-
-        <section class="terms-section">
-            <div class="terms-title">Условия<br>аренды.</div>
-
-            <div class="terms-list">
-                <div class="term-row">
-                    <div class="term-num">01</div>
-                    <div class="term-text">Возраст 21+</div>
-                </div>
-                <div class="term-row">
-                    <div class="term-num">02</div>
-                    <div class="term-text">Стаж вождения от 2 лет</div>
-                </div>
-                <div class="term-row">
-                    <div class="term-num">03</div>
-                    <div class="term-text">Наличие паспорта и ВУ</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ВИЗУАЛЬНЫЙ БЛОК -->
-        <section class="visual-section">
-            <div class="geometric-shape"></div>
-            <div class="visual-image-wrapper">
-                <img src="https://images.unsplash.com/photo-1609521263047-f8f205293f24?q=80&w=2000&auto=format&fit=crop"
-                    alt="Объект движения">
-            </div>
-        </section>
-
-        <!-- CTA СЕКЦИЯ -->
+        <!-- ЖЕСТКИЙ CTA -->
         <section class="cta-section">
-            <div class="cta-title">
-                Подключиться<br>к системе.
-            </div>
-            <a href="auth.html" class="cta-button">
-                <span>Регистрация</span>
-                <span class="arrow">↘</span>
-            </a>
+            <div class="cta-text">ИНТЕГРАЦИЯ В ПОТОК</div>
+            <a href="auth.html" class="cta-button mono">[ ИНИЦИАЛИЗИРОВАТЬ ДОСТУП ]</a>
         </section>
 
     </main>
 
-    <!-- Скрипт для плакатного меню -->
     <script>
+        // Меню
         document.getElementById('open-menu').addEventListener('click', () => {
             document.getElementById('mobile-menu').classList.add('is-open');
             document.body.style.overflow = 'hidden';
@@ -133,13 +125,14 @@
             document.body.style.overflow = '';
         });
 
+        // Проверка токена (меняет ДОСТУП на ВЫХОД)
         document.addEventListener('DOMContentLoaded', () => {
             const token = localStorage.getItem('token');
             if (token) {
                 const headerAuth = document.getElementById('header-auth-link');
                 const mobileAuth = document.getElementById('mobile-auth-link');
 
-                const logoutHtml = '<a href="#" id="logout-btn">Выход</a>';
+                const logoutHtml = '<a href="#" id="logout-btn" class="accent-link">[ ВЫХОД ]</a>';
 
                 if (headerAuth) headerAuth.outerHTML = logoutHtml;
                 if (mobileAuth) mobileAuth.outerHTML = logoutHtml;
