@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>РЕНТАЛС — Манифест</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- МОБИЛЬНОЕ МЕНЮ (Оверлей) -->
+    <div class="mobile-menu-overlay" id="mobile-menu">
+        <div class="mobile-menu-header">
+            <div class="logo">Ренталс</div>
+            <button class="btn-close-menu" id="close-menu">ЗАКРЫТЬ</button>
+        </div>
+        <nav class="mobile-nav">
+            <a href="fleet.html">Автопарк</a>
+            <a href="about.html">О нас</a>
+            <a href="contact.html">Контакты</a>
+            <a href="auth.html" class="accent">Регистрация</a>
+        </nav>
+    </div>
+
+    <main class="grid-container">
+
+        <!-- ОБНОВЛЕННЫЙ HEADER -->
+        <header class="main-header">
+            <div class="header-logo"><a href="index.html">Ренталс</a></div>
+
+            <nav class="header-nav">
+                <a href="fleet.html">Автопарк</a>
+                <a href="about.html">О нас</a>
+                <a href="contact.html">Контакты</a>
+            </nav>
+
+            <div class="header-auth">
+                <a href="auth.html">Регистрация</a>
+            </div>
+
+            <!-- Кнопка только для мобилок -->
+            <button class="mobile-menu-trigger" id="open-menu">МЕНЮ</button>
+        </header>
+
+        <!-- HERO СЕКЦИЯ -->
+        <section class="hero">
+            <h1>Автомобиль<br>как функция.</h1>
+            <div class="hero-desc">
+                Мы отвергаем идею владения. Мы создаем чистую инфраструктуру движения. Машина больше не статус — это
+                инструмент достижения цели.
+            </div>
+        </section>
+
+        <!-- СЕКЦИЯ ПРИНЦИПОВ -->
+        <section class="principles">
+            <article class="principle-block">
+                <div class="principle-num">01</div>
+                <h2>Рациональность</h2>
+                <p>Мы исключаем эмоции из владения. Автомобиль — это строгая математическая модель перемещения из точки
+                    А в точку Б с максимальной эффективностью.</p>
+            </article>
+
+            <article class="principle-block">
+                <div class="principle-num">02</div>
+                <h2>Унификация</h2>
+                <p>Никакого визуального шума. Идеально белые кузова, единый стандарт обслуживания и абсолютная,
+                    бескомпромиссная предсказуемость опыта.</p>
+            </article>
+
+            <article class="principle-block">
+                <div class="principle-num">03</div>
+                <h2>Аскетизм</h2>
+                <p>Отказ от лишнего. В вашем распоряжении только руль, педали и интерфейс. Настоящая роскошь заключается
+                    в пустоте и отсутствии необходимости обслуживать механизм.</p>
+            </article>
+        </section>
+
+        <!-- НОВАЯ СЕКЦИЯ: УСЛОВИЯ АРЕНДЫ -->
+        <section class="terms-section">
+            <div class="terms-title">Условия<br>аренды.</div>
+
+            <div class="terms-list">
+                <div class="term-row">
+                    <div class="term-num">01</div>
+                    <div class="term-text">Возраст 21+</div>
+                </div>
+                <div class="term-row">
+                    <div class="term-num">02</div>
+                    <div class="term-text">Стаж вождения от 2 лет</div>
+                </div>
+                <div class="term-row">
+                    <div class="term-num">03</div>
+                    <div class="term-text">Наличие паспорта и ВУ</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ВИЗУАЛЬНЫЙ БЛОК -->
+        <section class="visual-section">
+            <div class="geometric-shape"></div>
+            <div class="visual-image-wrapper">
+                <img src="https://images.unsplash.com/photo-1609521263047-f8f205293f24?q=80&w=2000&auto=format&fit=crop"
+                    alt="Объект движения">
+            </div>
+        </section>
+
+        <!-- CTA СЕКЦИЯ -->
+        <section class="cta-section">
+            <div class="cta-title">
+                Подключиться<br>к системе.
+            </div>
+            <a href="auth.html" class="cta-button">
+                <span>Регистрация</span>
+                <span class="arrow">↘</span>
+            </a>
+        </section>
+
+    </main>
+
+    <!-- Скрипт для плакатного меню -->
+    <script>
+        document.getElementById('open-menu').addEventListener('click', () => {
+            document.getElementById('mobile-menu').classList.add('is-open');
+            document.body.style.overflow = 'hidden';
+        });
+        document.getElementById('close-menu').addEventListener('click', () => {
+            document.getElementById('mobile-menu').classList.remove('is-open');
+            document.body.style.overflow = '';
+        });
+    </script>
+</body>
+
+</html>

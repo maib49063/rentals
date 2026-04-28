@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>РЕНТАЛС — Связь</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="contact.css">
+</head>
+
+<body>
+
+    <!-- МОБИЛЬНОЕ МЕНЮ (Оверлей) -->
+    <div class="mobile-menu-overlay" id="mobile-menu">
+        <div class="mobile-menu-header">
+            <div class="logo">Ренталс</div>
+            <button class="btn-close-menu" id="close-menu">ЗАКРЫТЬ</button>
+        </div>
+        <nav class="mobile-nav">
+            <a href="index.html">Главная</a>
+            <a href="fleet.html">Автопарк</a>
+            <a href="about.html">О нас</a>
+        </nav>
+    </div>
+
+    <!-- HEADER -->
+    <header class="main-header grid-container">
+        <div class="header-logo"><a href="index.html">Ренталс</a></div>
+        <nav class="header-nav">
+            <a href="index.html">Главная</a>
+            <a href="fleet.html">Автопарк</a>
+            <a href="about.html">О нас</a>
+        </nav>
+        <div class="header-auth">
+            <a href="auth.html">Регистрация</a>
+        </div>
+        <button class="mobile-menu-trigger" id="open-menu">МЕНЮ</button>
+    </header>
+
+    <main>
+        <!-- GIANT HEADER -->
+        <section class="page-title grid-container">
+            <h1>Связь.</h1>
+        </section>
+
+        <!-- INFO MODULES -->
+        <section class="info-modules grid-container">
+            <div class="info-block">
+                <div class="info-desc mono">[TEL]</div>
+                <div class="info-value">8 800 555 01 99</div>
+            </div>
+            <div class="info-block">
+                <div class="info-desc mono">[MAIL]</div>
+                <div class="info-value">SYS@RENTALS.COM</div>
+            </div>
+            <div class="info-block">
+                <div class="info-desc mono">[LOC]</div>
+                <div class="info-value">БЕРЛИНСКАЯ 14,<br>ТЕРМИНАЛ B</div>
+            </div>
+        </section>
+
+        <!-- FORM & SOCIALS -->
+        <section class="contact-grid grid-container">
+            <!-- ФОРМА ОБРАЩЕНИЯ -->
+            <form id="contact-form" class="contact-form">
+                <div class="form-title">Запрос в систему</div>
+
+                <div class="form-group">
+                    <input type="text" id="name" name="name" placeholder="ИДЕНТИФИКАТОР (ИМЯ)" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" id="email" name="email" placeholder="ЭЛЕКТРОННАЯ ПОЧТА" required>
+                </div>
+                <div class="form-group">
+                    <textarea id="message" name="message" placeholder="МАССИВ ДАННЫХ (СООБЩЕНИЕ)" required
+                        rows="4"></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit">ОТПРАВИТЬ ДАННЫЕ</button>
+            </form>
+
+            <!-- СОЦСЕТИ И ТЕХНИЧЕСКИЙ БЛОК -->
+            <div class="socials-block">
+                <div class="socials-list">
+                    <a href="#">TELEGRAM ↗</a>
+                    <a href="#">VKONTAKTE ↗</a>
+                    <a href="#">YOUTUBE ↗</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Мобильное меню
+        document.getElementById('open-menu').addEventListener('click', () => {
+            document.getElementById('mobile-menu').classList.add('is-open');
+            document.body.style.overflow = 'hidden';
+        });
+        document.getElementById('close-menu').addEventListener('click', () => {
+            document.getElementById('mobile-menu').classList.remove('is-open');
+            document.body.style.overflow = '';
+        });
+
+        // Часы UTC для технического блока
+        const timeEl = document.getElementById('utc-time');
+        setInterval(() => {
+            const now = new Date();
+            timeEl.textContent = `SYS_TIME: ${now.toISOString().substring(11, 19)} UTC`;
+        }, 1000);
+
+        // Обработка формы
+        const form = document.getElementById('contact-form');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const dataObj = Object.fromEntries(formData.entries());
+
+            // Вывод JSON в консоль для API
+            console.log('PAYLOAD:', JSON.stringify(dataObj));
+
+            alert('ДАННЫЕ УСПЕШНО ПЕРЕДАНЫ В СИСТЕМУ.');
+            form.reset();
+        });
+    </script>
+</body>
+
+</html>

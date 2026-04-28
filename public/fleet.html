@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>РЕНТАЛС — Автопарк</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="fleet.css">
+</head>
+
+<body>
+
+    <!-- МОБИЛЬНОЕ МЕНЮ (Оверлей) -->
+    <div class="mobile-menu-overlay" id="mobile-menu">
+        <div class="mobile-menu-header">
+            <div class="logo">Ренталс</div>
+            <button class="btn-close-menu" id="close-menu">ЗАКРЫТЬ</button>
+        </div>
+        <nav class="mobile-nav">
+            <a href="index.html">Манифест</a>
+            <a href="about.html">О нас</a>
+            <a href="contact.html">Контакты</a>
+            <a href="auth.html" id="mobile-auth-link">Регистрация / Вход</a>
+        </nav>
+    </div>
+
+    <!-- ОБНОВЛЕННЫЙ HEADER -->
+    <header class="main-header grid-container">
+        <div class="header-logo"><a href="index.html">Ренталс</a></div>
+
+        <nav class="header-nav">
+            <a href="index.html">Главная</a>
+            <a href="about.html">О нас</a>
+            <a href="contact.html">Контакты</a>
+        </nav>
+
+        <div class="header-auth">
+            <a href="auth.html" id="header-auth-link">Регистрация</a>
+        </div>
+
+        <button class="mobile-menu-trigger" id="open-menu">МЕНЮ</button>
+    </header>
+
+    <main>
+        <!-- ЗАГОЛОВОК -->
+        <section class="page-title grid-container">
+            <h1>Доступные<br>инструменты.</h1>
+        </section>
+
+        <!-- ФИЛЬТРЫ -->
+        <nav class="filters grid-container" id="filters">
+            <button class="filter-btn active" data-filter="all">Все классы</button>
+            <button class="filter-btn" data-filter="economy">Эконом</button>
+            <button class="filter-btn" data-filter="comfort">Комфорт</button>
+            <button class="filter-btn" data-filter="business">Бизнес</button>
+            <button class="filter-btn" data-filter="special">Спецтехника</button>
+        </nav>
+
+        <!-- КАТАЛОГ (Теперь пустой, заполняется через JS из базы данных) -->
+        <section class="fleet-grid grid-container" id="catalog">
+            <!-- Сюда fleet.js будет вставлять карточки машин -->
+        </section>
+    </main>
+
+    <!-- МОДАЛЬНОЕ ОКНО БРОНИРОВАНИЯ -->
+    <aside class="modal" id="booking-modal">
+        <div class="modal-inner">
+            <div class="modal-header">
+                <div class="modal-title">Оформление: <span id="modal-model-name"></span></div>
+                <button class="btn-close" id="close-modal">ЗАКРЫТЬ</button>
+            </div>
+
+            <!-- novalidate отключает стандартные всплывашки браузера, валидируем через JS -->
+            <form id="booking-form" class="booking-form" novalidate>
+                <div class="form-group">
+                    <input type="text" id="passport" name="passport" placeholder="Серия и номер паспорта" required>
+                    <span class="error-msg">Обязательное поле. Формат: 4 цифры пробел 6 цифр.</span>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="license" name="license" placeholder="Водительское удостоверение" required>
+                    <span class="error-msg">Обязательное поле. Формат: 10 знаков.</span>
+                </div>
+                <div class="form-group">
+                    <input type="tel" id="phone" name="phone" placeholder="Телефон (+7...)" required>
+                    <span class="error-msg">Неверный формат телефона.</span>
+                </div>
+                <div class="form-group">
+                    <div style="font-size:12px; font-weight:bold; color:#666; margin-bottom:5px;">ДАТА НАЧАЛА</div>
+                    <input type="date" id="start_date" name="start_date" required>
+                    <span class="error-msg">Укажите дату начала.</span>
+                </div>
+                <div class="form-group">
+                    <div style="font-size:12px; font-weight:bold; color:#666; margin-bottom:5px;">ДАТА ЗАВЕРШЕНИЯ</div>
+                    <input type="date" id="end_date" name="end_date" required>
+                    <span class="error-msg">Укажите дату завершения.</span>
+                </div>
+
+                <button type="submit" class="btn-submit">ПОДТВЕРДИТЬ БРОНИРОВАНИЕ</button>
+            </form>
+        </div>
+    </aside>
+
+    <script src="fleet.js"></script>
+
+    <!-- Скрипт для замены "Регистрация" на "Выход" -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                const headerAuth = document.getElementById('header-auth-link');
+                const mobileAuth = document.getElementById('mobile-auth-link');
+
+                const logoutHtml = '<a href="#" id="logout-btn">Выход</a>';
+
+                if (headerAuth) headerAuth.outerHTML = logoutHtml;
+                if (mobileAuth) mobileAuth.outerHTML = logoutHtml;
+
+                document.querySelectorAll('#logout-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        localStorage.removeItem('token');
+                        window.location.reload();
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>РЕНТАЛС — Инфраструктура</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Подключаем Inter и JetBrains Mono для технических данных -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="about.css">
+</head>
+
+<body>
+
+    <!-- МОБИЛЬНОЕ МЕНЮ (Оверлей) -->
+    <div class="mobile-menu-overlay" id="mobile-menu">
+        <div class="mobile-menu-header">
+            <div class="logo">Ренталс</div>
+            <button class="btn-close-menu" id="close-menu">ЗАКРЫТЬ</button>
+        </div>
+        <nav class="mobile-nav">
+            <a href="index.html">Манифест</a>
+            <a href="fleet.html">Автопарк</a>
+            <a href="contact.html">Контакты</a>
+            <a href="auth.html">Регистрация</a>
+        </nav>
+    </div>
+
+    <!-- HEADER -->
+    <header class="main-header grid-container">
+        <div class="header-logo">Ренталс // Система</div>
+        <nav class="header-nav">
+            <a href="index.html">Главная</a>
+            <a href="fleet.html">Автопарк</a>
+            <a href="contact.html">Контакты</a>
+        </nav>
+        <div class="header-auth">
+            <a href="auth.html">Регистрация</a>
+        </div>
+        <button class="mobile-menu-trigger" id="open-menu">МЕНЮ</button>
+    </header>
+
+    <main>
+        <!-- ЗАГОЛОВОК -->
+        <section class="page-title grid-container">
+            <h1>Инфра<br>структура.</h1>
+        </section>
+
+        <!-- МИССИЯ: ОБЪЕКТ 01 -->
+        <section class="mission-section grid-container">
+            <div class="mission-meta mono">
+                <div>[OBJ:01]</div>
+                <div>SYS.CORE.INIT</div>
+                <div>56.8389° N, 60.6057° E</div>
+            </div>
+            <div class="mission-text">
+                Мы запускаем процесс принудительной деавтомобилизации городского пространства. Личный транспорт — это
+                рудимент эпохи потребления. Мы предоставляем чистый доступ к функции перемещения.
+            </div>
+        </section>
+
+        <!-- МАКРО ФОТО (Ч/Б, Асимметрия) -->
+        <section class="macro-visual grid-container">
+            <div class="macro-image-wrapper">
+                <img src="https://images.unsplash.com/photo-1552554702-864acc737eec?q=80&w=2000&auto=format&fit=crop"
+                    alt="Деталь механизма">
+                <div class="caption mono">FIG. 01 — Аппаратный узел управления</div>
+            </div>
+        </section>
+
+        <!-- СТАТИСТИКА -->
+        <section class="stats-section grid-container">
+            <div class="stat-block">
+                <div class="stat-num mono">1500+</div>
+                <div class="stat-label">Единиц флота на линии</div>
+            </div>
+            <div class="stat-block">
+                <div class="stat-num mono">0.8s</div>
+                <div class="stat-label">Время отклика системы</div>
+            </div>
+            <div class="stat-block">
+                <div class="stat-num mono">24/7</div>
+                <div class="stat-label">Непрерывная доступность</div>
+            </div>
+        </section>
+
+        <!-- ДАННЫЕ: ГЕОГРАФИЯ И СТАНДАРТЫ -->
+        <section class="data-section grid-container">
+            <!-- География покрытия -->
+            <div class="geo-block">
+                <h2 class="data-title">Зоны покрытия</h2>
+                <div class="geo-table">
+                    <div class="geo-row">
+                        <span>Центральные районы</span>
+                        <span class="mono">БЕЗ ОГРАНИЧЕНИЙ</span>
+                    </div>
+                    <div class="geo-row">
+                        <span>Терминалы аэропортов</span>
+                        <span class="mono">БЕЗ ДОПЛАТ</span>
+                    </div>
+                    <div class="geo-row">
+                        <span>Муниципальные парковки</span>
+                        <span class="mono">ВКЛЮЧЕНО</span>
+                    </div>
+                    <div class="geo-row">
+                        <span>Загородные маршруты</span>
+                        <span class="mono">ДО 50 КМ</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Операционные стандарты (вместо СТЕКА) -->
+            <div class="tech-block">
+                <h2 class="data-title">Стандарты системы</h2>
+                <div class="tech-list mono">
+                    <div class="tech-item">БЕСКЛЮЧЕВОЙ ДОСТУП [BLE / RFID]</div>
+                    <div class="tech-item">АБСОЛЮТНАЯ СТРАХОВКА [КАСКО без франшизы]</div>
+                    <div class="tech-item">ТОЧНАЯ ТЕЛЕМАТИКА [GPS / ГЛОНАСС]</div>
+                    <div class="tech-item">АВТОМАТИЗАЦИЯ [Алгоритмический прайсинг]</div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Жесткая логика меню без лишних абстракций
+        const btnOpen = document.getElementById('open-menu');
+        const btnClose = document.getElementById('close-menu');
+        const menu = document.getElementById('mobile-menu');
+
+        btnOpen.addEventListener('click', () => {
+            menu.classList.add('is-open');
+            document.body.style.overflow = 'hidden';
+        });
+
+        btnClose.addEventListener('click', () => {
+            menu.classList.remove('is-open');
+            document.body.style.overflow = '';
+        });
+    </script>
+</body>
+
+</html>

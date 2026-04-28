@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>РЕНТАЛС — Система Доступа</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="auth.css">
+</head>
+
+<body>
+
+    <!-- МОБИЛЬНОЕ МЕНЮ (Оверлей) -->
+    <div class="mobile-menu-overlay" id="mobile-menu">
+        <div class="mobile-menu-header">
+            <div class="logo">Ренталс</div>
+            <button class="btn-close-menu" id="close-menu">ЗАКРЫТЬ</button>
+        </div>
+        <nav class="mobile-nav">
+            <a href="index.html">Манифест</a>
+            <a href="fleet.html">Автопарк</a>
+            <a href="about.html">О нас</a>
+            <a href="contact.html">Контакты</a>
+            <a href="auth.html" class="accent">Доступ</a>
+        </nav>
+    </div>
+
+    <!-- HEADER -->
+    <header class="main-header grid-container">
+        <div class="header-logo"><a href="index.html">Ренталс</a></div>
+        <nav class="header-nav">
+            <a href="index.html">Главная</a>
+            <a href="fleet.html">Автопарк</a>
+            <a href="about.html">О нас</a>
+            <a href="contact.html">Контакты</a>
+        </nav>
+        <div class="header-auth">
+            <a href="auth.html" class="active">Доступ</a>
+        </div>
+        <button class="mobile-menu-trigger" id="open-menu">МЕНЮ</button>
+    </header>
+
+    <main class="auth-layout grid-container">
+        <!-- ЛЕВАЯ ЧАСТЬ: МАССИВНАЯ ТИПОГРАФИКА -->
+        <section class="auth-visual">
+            <div class="tech-label mono">[SEC.LVL.01]</div>
+            <h1>СИСТЕМА<br>ДОСТУПА.</h1>
+        </section>
+
+        <!-- ПРАВАЯ ЧАСТЬ: ФОРМЫ -->
+        <section class="auth-module">
+            <!-- ПЕРЕКЛЮЧАТЕЛЬ -->
+            <div class="auth-toggle">
+                <span id="tab-login" class="tab active">ВХОД</span>
+                <span class="mono separator">/</span>
+                <span id="tab-register" class="tab">СОЗДАТЬ АККАУНТ</span>
+            </div>
+
+            <!-- БЛОК ОШИБКИ -->
+            <div id="error-block" class="error-block hidden mono">
+                <span class="err-title">ERR_SYS:</span>
+                <span id="error-text">ОШИБКА АВТОРИЗАЦИИ</span>
+            </div>
+
+            <!-- ФОРМА ВХОДА -->
+            <form id="form-login" class="auth-form active-form">
+                <div class="form-group">
+                    <input type="email" name="email" placeholder="ЭЛЕКТРОННАЯ ПОЧТА" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" name="password" placeholder="ПАРОЛЬ" required>
+                    <a href="#" class="forgot-link mono">ЗАБЫЛИ ПАРОЛЬ?</a>
+                </div>
+                <button type="submit" class="btn-submit">ИНИЦИАЛИЗАЦИЯ</button>
+            </form>
+
+            <!-- ФОРМА РЕГИСТРАЦИИ -->
+            <form id="form-register" class="auth-form hidden-form">
+                <div class="form-group">
+                    <input type="email" name="email" placeholder="ЭЛЕКТРОННАЯ ПОЧТА" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" name="password" placeholder="ПАРОЛЬ" required>
+                    <div class="input-hint mono">МИН. 8 СИМВОЛОВ, 1 ЦИФРА</div>
+                </div>
+                <div class="form-group">
+                    <input type="password" name="password_confirm" placeholder="ПОВТОРИТЕ ПАРОЛЬ" required>
+                </div>
+                <button type="submit" class="btn-submit">РЕГИСТРАЦИЯ</button>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        // Меню
+        document.getElementById('open-menu').addEventListener('click', () => {
+            document.getElementById('mobile-menu').classList.add('is-open');
+        });
+        document.getElementById('close-menu').addEventListener('click', () => {
+            document.getElementById('mobile-menu').classList.remove('is-open');
+        });
+
+        // Табы
+        const tabLogin = document.getElementById('tab-login');
+        const tabRegister = document.getElementById('tab-register');
+        const formLogin = document.getElementById('form-login');
+        const formRegister = document.getElementById('form-register');
+        const errorBlock = document.getElementById('error-block');
+
+        function switchTab(mode) {
+            errorBlock.classList.add('hidden');
+            if (mode === 'login') {
+                tabLogin.classList.add('active');
+                tabRegister.classList.remove('active');
+                formLogin.classList.replace('hidden-form', 'active-form');
+                formRegister.classList.replace('active-form', 'hidden-form');
+            } else {
+                tabRegister.classList.add('active');
+                tabLogin.classList.remove('active');
+                formRegister.classList.replace('hidden-form', 'active-form');
+                formLogin.classList.replace('active-form', 'hidden-form');
+            }
+        }
+
+        tabLogin.addEventListener('click', () => switchTab('login'));
+        tabRegister.addEventListener('click', () => switchTab('register'));
+
+        function showError(msg) {
+            document.getElementById('error-text').textContent = msg;
+            errorBlock.classList.remove('hidden');
+        }
+
+        // ЛОГИН (С СОХРАНЕНИЕМ ТОКЕНА)
+        formLogin.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorBlock.classList.add('hidden');
+
+            const payload = Object.fromEntries(new FormData(formLogin));
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.error || 'ОТКАЗ В ДОСТУПЕ. ПРОВЕРЬТЕ КРЕДЕНШНАЛЫ.');
+
+                // ЗАПИСЫВАЕМ ТОКЕН В БРАУЗЕР
+                localStorage.setItem('token', data.token);
+
+                alert('АВТОРИЗАЦИЯ УСПЕШНА');
+                window.location.href = '/fleet.html';
+            } catch (err) {
+                showError(err.message || 'СЕРВЕР НЕДОСТУПЕН');
+            }
+        });
+
+        // РЕГИСТРАЦИЯ
+        formRegister.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorBlock.classList.add('hidden');
+
+            const payload = Object.fromEntries(new FormData(formRegister));
+
+            if (payload.password !== payload.password_confirm) {
+                showError('ПАРОЛИ НЕ СОВПАДАЮТ');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.error || 'EMAIL УЖЕ ЗАРЕГИСТРИРОВАН В СИСТЕМЕ.');
+
+                alert('УЧЕТНАЯ ЗАПИСЬ СОЗДАНА');
+                switchTab('login');
+            } catch (err) {
+                showError(err.message || 'СЕРВЕР НЕДОСТУПЕН');
+            }
+        });
+    </script>
+</body>
+
+</html>

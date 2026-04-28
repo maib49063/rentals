@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Админка: Бронирования и Автопарк</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #000;
+            color: #0f0;
+            padding: 20px;
+        }
+
+        h1,
+        h2 {
+            border-bottom: 1px solid #0f0;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            border: 1px solid #0f0;
+            padding: 10px;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #0f0;
+            color: #000;
+        }
+
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: monospace;
+        }
+
+        button:hover {
+            background: #fff;
+        }
+
+        .cancel-btn,
+        .delete-btn {
+            background: red;
+            color: #fff;
+        }
+
+        .action-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .photo-upload-container {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            border-top: 1px dashed #0f0;
+            padding-top: 10px;
+            margin-top: 5px;
+            width: 100%;
+        }
+
+        .photo-upload-container input[type="file"] {
+            color: #0f0;
+            font-size: 11px;
+            max-width: 150px;
+        }
+
+        .form-block {
+            border: 1px dashed #0f0;
+            padding: 20px;
+            margin-top: 20px;
+            max-width: 500px;
+        }
+
+        .form-block input,
+        .form-block select {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 5px;
+            background: #111;
+            color: #0f0;
+            border: 1px solid #0f0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>СИСТЕМА КОНТРОЛЯ: АКТИВНЫЕ БРОНИРОВАНИЯ</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Оформлено</th>
+                <th>Пользователь (Email)</th>
+                <th>Машина</th>
+                <th>Период аренды</th>
+                <th>Статус</th>
+                <th>Действие</th>
+            </tr>
+        </thead>
+        <tbody id="bookings-list"></tbody>
+    </table>
+
+    <h2>УПРАВЛЕНИЕ АВТОПАРКОМ</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Модель</th>
+                <th>Класс</th>
+                <th>Цена (₽/мин)</th>
+                <th>Доступность</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody id="admin-cars-list"></tbody>
+    </table>
+
+    <h2>ДОБАВИТЬ НОВУЮ МАШИНУ</h2>
+    <div class="form-block">
+        <form id="add-car-form">
+            <label>Модель авто:</label>
+            <input type="text" name="model" required placeholder="Например: Audi A4">
+
+            <label>Класс:</label>
+            <select name="category" required>
+                <option value="economy">Эконом</option>
+                <option value="comfort">Комфорт</option>
+                <option value="business">Бизнес</option>
+                <option value="special">Спецтехника</option>
+            </select>
+
+            <label>Цена за минуту (₽):</label>
+            <input type="number" name="price_per_minute" required placeholder="25">
+
+            <label>Фотография машины:</label>
+            <input type="file" name="image" accept="image/*" required>
+
+            <button type="submit" style="width: 100%; padding: 10px; margin-top: 10px;">ДОБАВИТЬ В АВТОПАРК</button>
+        </form>
+    </div>
+
+    <script>
+        // Загрузка бронирований
+        async function loadBookings() {
+            try {
+                const res = await fetch('/api/admin/bookings');
+                const data = await res.json();
+                const tbody = document.getElementById('bookings-list');
+                tbody.innerHTML = '';
+
+                if (data.bookings.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6">Бронирований пока нет.</td></tr>';
+                    return;
+                }
+
+                data.bookings.forEach(b => {
+                    const created = new Date(b.created_at).toLocaleString('ru-RU');
+                    const start = b.start_date ? new Date(b.start_date).toLocaleDateString('ru-RU') : '---';
+                    const end = b.end_date ? new Date(b.end_date).toLocaleDateString('ru-RU') : '---';
+
+                    const actionBtn = b.status === 'active'
+                        ? `<button class="cancel-btn" onclick="cancelBooking('${b.booking_id}')">Аннулировать</button>`
+                        : '---';
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${created}</td>
+                            <td>${b.user_email}</td>
+                            <td>${b.car_model}</td>
+                            <td>${start} — ${end}</td>
+                            <td>[${b.status.toUpperCase()}]</td>
+                            <td>${actionBtn}</td>
+                        </tr>
+                    `;
+                });
+            } catch (err) {
+                alert('Ошибка при загрузке бронирований');
+            }
+        }
+
+        // Загрузка машин
+        async function loadAdminCars() {
+            try {
+                const res = await fetch('/api/admin/cars');
+                const data = await res.json();
+                const tbody = document.getElementById('admin-cars-list');
+                tbody.innerHTML = '';
+
+                if (data.cars.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5">Автопарк пуст.</td></tr>';
+                    return;
+                }
+
+                data.cars.forEach(car => {
+                    const status = car.is_available ? 'СВОБОДНА' : 'В АРЕНДЕ';
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${car.model}</td>
+                            <td>${car.category.toUpperCase()}</td>
+                            <td>${car.price_per_minute}</td>
+                            <td>[${status}]</td>
+                            <td class="action-cell">
+                                <button class="delete-btn" onclick="deleteCar('${car.id}')">Удалить машину</button>
+                                <div class="photo-upload-container">
+                                    <input type="file" id="photo-${car.id}" accept="image/*">
+                                    <button onclick="updateCarPhoto('${car.id}')" style="font-size: 10px;">Обновить фото</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (err) {
+                alert('Ошибка при загрузке машин');
+            }
+        }
+
+        // Отмена брони
+        async function cancelBooking(id) {
+            if (!confirm('Точно аннулировать бронь?')) return;
+            try {
+                const res = await fetch(`/api/admin/bookings/${id}/cancel`, { method: 'PUT' });
+                const data = await res.json();
+                alert(data.message || data.error);
+                loadBookings();
+                loadAdminCars();
+            } catch (err) {
+                alert('Ошибка');
+            }
+        }
+
+        // Удаление машины
+        async function deleteCar(id) {
+            if (!confirm('Точно удалить машину? Она исчезнет с сайта навсегда.')) return;
+            try {
+                const res = await fetch(`/api/admin/cars/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                alert(data.message || data.error);
+                loadAdminCars();
+            } catch (err) {
+                alert('Ошибка');
+            }
+        }
+
+        // Обновление фото конкретной машины
+        async function updateCarPhoto(id) {
+            const fileInput = document.getElementById(`photo-${id}`);
+            if (!fileInput.files.length) {
+                alert('Эй, ты забыл выбрать файл!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+
+            try {
+                const res = await fetch(`/api/admin/cars/${id}/photo`, {
+                    method: 'PUT',
+                    body: formData
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+
+                alert(data.message);
+                fileInput.value = ''; // сброс инпута
+                loadAdminCars(); // на случай если захочешь выводить картинки прямо в админке
+            } catch (err) {
+                alert('Ошибка: ' + err.message);
+            }
+        }
+
+        // Добавление машины
+        document.getElementById('add-car-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            try {
+                const res = await fetch('/api/admin/cars', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                alert(data.message);
+                e.target.reset();
+                loadAdminCars(); // Обновляем список машин
+            } catch (err) {
+                alert('Ошибка: ' + err.message);
+            }
+        });
+
+        loadBookings();
+        loadAdminCars();
+    </script>
+</body>
+
+</html>
