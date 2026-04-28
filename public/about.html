@@ -26,7 +26,7 @@
             <a href="index.html">Манифест</a>
             <a href="fleet.html">Автопарк</a>
             <a href="contact.html">Контакты</a>
-            <a href="auth.html">Регистрация</a>
+            <a href="auth.html" id="mobile-auth-link" class="accent">Регистрация</a>
         </nav>
     </div>
 
@@ -39,7 +39,7 @@
             <a href="contact.html">Контакты</a>
         </nav>
         <div class="header-auth">
-            <a href="auth.html">Регистрация</a>
+            <a href="auth.html" id="header-auth-link">Регистрация</a>
         </div>
         <button class="mobile-menu-trigger" id="open-menu">МЕНЮ</button>
     </header>
@@ -141,6 +141,27 @@
         btnClose.addEventListener('click', () => {
             menu.classList.remove('is-open');
             document.body.style.overflow = '';
+        });
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                const headerAuth = document.getElementById('header-auth-link');
+                const mobileAuth = document.getElementById('mobile-auth-link');
+
+                const logoutHtml = '<a href="#" id="logout-btn">Выход</a>';
+
+                if (headerAuth) headerAuth.outerHTML = logoutHtml;
+                if (mobileAuth) mobileAuth.outerHTML = logoutHtml;
+
+                document.querySelectorAll('#logout-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        localStorage.removeItem('token');
+                        window.location.reload();
+                    });
+                });
+            }
         });
     </script>
 </body>

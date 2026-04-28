@@ -192,6 +192,27 @@
                 showError(err.message || 'СЕРВЕР НЕДОСТУПЕН');
             }
         });
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                const headerAuth = document.getElementById('header-auth-link');
+                const mobileAuth = document.getElementById('mobile-auth-link');
+
+                const logoutHtml = '<a href="#" id="logout-btn">Выход</a>';
+
+                if (headerAuth) headerAuth.outerHTML = logoutHtml;
+                if (mobileAuth) mobileAuth.outerHTML = logoutHtml;
+
+                document.querySelectorAll('#logout-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        localStorage.removeItem('token');
+                        window.location.reload();
+                    });
+                });
+            }
+        });
     </script>
 </body>
 
