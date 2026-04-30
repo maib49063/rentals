@@ -56,6 +56,26 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
+const authenticateAdmin = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) return res.status(401).json({ error: 'Отказ в доступе. Токен отсутствует.' });
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) return res.status(403).json({ error: 'Недействительный или просроченный токен.' });
+
+        // Почта админа
+        const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@rentals.com';
+        if (user.email !== ADMIN_EMAIL) {
+            return res.status(403).json({ error: 'Сюда нельзя. Только для админа.' });
+        }
+
+        req.user = user;
+        next();
+    });
+};
+
 // ==========================================
 // РОУТЫ: Авторизация
 // ==========================================
@@ -71,7 +91,7 @@ app.post('/api/auth/register', async (req, res) => {
         const passwordHash = await bcrypt.hash(password, salt);
 
         const result = await pool.query(
-            `INSERT INTO users (email, password_hash, passport, license) VALUES ($1, $2, $3, $4) RETURNING id, email`,[email, passwordHash, passport || '0000 000000', license || '0000000000']
+            `INSERT INTO users (email, password_hash, passport, license) VALUES ($1, $2, $3, $4) RETURNING id, email`, [email, passwordHash, passport || '0000 000000', license || '0000000000']
         );
         res.status(201).json({ message: 'Учетная запись успешно создана.', user: result.rows[0] });
     } catch (err) {
@@ -99,6 +119,22 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // ==========================================
+// РОУТ: Обратная связь
+// ==========================================
+app.post('/api/contact', async (req, res) => {
+    const { name, email, message } = req.body;
+    if (!name || !email || !message) return res.status(400).json({ error: 'Заполните все поля формы.' });
+
+    try {
+        console.log('[SYS] Новое сообщение из формы обратной связи:', { name, email, message });
+        res.json({ message: 'Сообщение успешно отправлено. Мы свяжемся с вами в ближайшее время.' });
+    } catch (err) {
+        console.error('[SYS] Ошибка обработки формы:', err);
+        res.status(500).json({ error: 'Не удалось отправить сообщение. Попробуйте позже.' });
+    }
+});
+
+// ==========================================
 // РОУТЫ: Автопарк (Для клиентов)
 // ==========================================
 app.get('/api/cars', async (req, res) => {
@@ -119,35 +155,58 @@ app.post('/api/bookings', authenticateToken, async (req, res) => {
 
     if (!car_model || !start_date || !end_date) return res.status(400).json({ error: 'Укажите модель и даты аренды.' });
 
+    // Базовая проверка дат
+    if (new Date(start_date) > new Date(end_date)) {
+        return res.status(400).json({ error: 'Дата начала не может быть позже даты завершения.' });
+    }
+
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
+
+        // 1. Проверяем, существует ли машина и не в ремонте ли она (is_available = true)
         const carRes = await client.query('SELECT id, is_available FROM cars WHERE model = $1', [car_model]);
         if (carRes.rows.length === 0) return res.status(404).json({ error: 'Автомобиль не найден.' });
-        if (!carRes.rows[0].is_available) return res.status(400).json({ error: 'Автомобиль недоступен.' });
+        if (!carRes.rows[0].is_available) return res.status(400).json({ error: 'Автомобиль временно выведен из эксплуатации.' });
 
         const car_id = carRes.rows[0].id;
+
+        // 2. ПРОВЕРКА НА ПЕРЕСЕЧЕНИЕ ДАТ (Ищем активные брони, которые наслаиваются на наши даты)
+        const overlapRes = await client.query(`
+            SELECT id FROM bookings 
+            WHERE car_id = $1 
+              AND status = 'active'
+              AND start_date <= $3
+              AND end_date >= $2
+        `, [car_id, start_date, end_date]);
+
+        if (overlapRes.rows.length > 0) {
+            await client.query('ROLLBACK');
+            return res.status(409).json({ error: 'Машина уже забронирована на эти даты. Выберите другой период.' });
+        }
+
+        // 3. Создаем бронь. Статус машины (is_available) больше НЕ трогаем!
         const bookingRes = await client.query(
-            `INSERT INTO bookings (user_id, car_id, status, start_date, end_date) VALUES ($1, $2, 'active', $3, $4) RETURNING id`,
-            [userId, car_id, start_date, end_date]
+            `INSERT INTO bookings (user_id, car_id, status, start_date, end_date) VALUES ($1, $2, 'active', $3, $4) RETURNING id`, [userId, car_id, start_date, end_date]
         );
 
-        await client.query('UPDATE cars SET is_available = false WHERE id = $1', [car_id]);
         await client.query('COMMIT');
-        res.status(201).json({ message: 'Машина забронирована.', booking_id: bookingRes.rows[0].id });
+        res.status(201).json({ message: 'Машина успешно забронирована на выбранные даты.', booking_id: bookingRes.rows[0].id });
     } catch (err) {
         await client.query('ROLLBACK');
+        console.error('[SYS] Ошибка бронирования:', err);
         res.status(500).json({ error: 'Внутренняя ошибка сервера.' });
     } finally {
         client.release();
     }
 });
 
+
 // ==========================================
 // РОУТЫ: АДМИНКА
 // ==========================================
 
-app.get('/api/admin/bookings', async (req, res) => {
+app.get('/api/admin/bookings', authenticateAdmin, async (req, res) => {
     try {
         const result = await pool.query(`
             SELECT b.id AS booking_id, u.email AS user_email, c.model AS car_model, b.status, b.created_at, b.start_date, b.end_date
@@ -163,22 +222,21 @@ app.get('/api/admin/bookings', async (req, res) => {
     }
 });
 
-app.put('/api/admin/bookings/:id/cancel', async (req, res) => {
+app.put('/api/admin/bookings/:id/cancel', authenticateAdmin, async (req, res) => {
     const bookingId = req.params.id;
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
+        // Проверяем существование активной брони
         const bRes = await client.query('SELECT car_id FROM bookings WHERE id = $1 AND status = $2', [bookingId, 'active']);
         if (bRes.rows.length === 0) return res.status(400).json({ error: 'Бронь не найдена или уже неактивна.' });
 
-        const carId = bRes.rows[0].car_id;
-
+        // Просто меняем статус брони на cancelled. Трогать is_available самой машины больше не нужно.
         await client.query(`UPDATE bookings SET status = 'cancelled' WHERE id = $1`, [bookingId]);
-        await client.query(`UPDATE cars SET is_available = true WHERE id = $1`, [carId]);
 
         await client.query('COMMIT');
-        res.json({ message: 'Бронь аннулирована. Машина снова доступна.' });
+        res.json({ message: 'Бронь аннулирована.' });
     } catch (err) {
         await client.query('ROLLBACK');
         res.status(500).json({ error: 'Ошибка сервера при отмене.' });
@@ -187,7 +245,7 @@ app.put('/api/admin/bookings/:id/cancel', async (req, res) => {
     }
 });
 
-app.get('/api/admin/cars', async (req, res) => {
+app.get('/api/admin/cars', authenticateAdmin, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM cars ORDER BY created_at DESC');
         res.json({ cars: result.rows });
@@ -196,7 +254,7 @@ app.get('/api/admin/cars', async (req, res) => {
     }
 });
 
-app.post('/api/admin/cars', upload.single('image'), async (req, res) => {
+app.post('/api/admin/cars', authenticateAdmin, upload.single('image'), async (req, res) => {
     const { model, category, price_per_minute } = req.body;
     if (!model || !category || !price_per_minute) return res.status(400).json({ error: 'Заполните все поля.' });
 
@@ -205,8 +263,7 @@ app.post('/api/admin/cars', upload.single('image'), async (req, res) => {
 
     try {
         await pool.query(
-            `INSERT INTO cars (model, category, price_per_minute, image_url) VALUES ($1, $2, $3, $4)`,
-            [model, category, price_per_minute, imageUrl]
+            `INSERT INTO cars (model, category, price_per_minute, image_url) VALUES ($1, $2, $3, $4)`, [model, category, price_per_minute, imageUrl]
         );
         res.status(201).json({ message: 'Автомобиль успешно добавлен в систему.' });
     } catch (err) {
@@ -214,18 +271,15 @@ app.post('/api/admin/cars', upload.single('image'), async (req, res) => {
     }
 });
 
-// АДМИНКА: Обновить только фотку у уже существующей машины
-app.put('/api/admin/cars/:id/photo', upload.single('image'), async (req, res) => {
+app.put('/api/admin/cars/:id/photo', authenticateAdmin, upload.single('image'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'Файл не прикреплен.' });
 
     const imageUrl = `/uploads/${req.file.filename}`;
     const carId = req.params.id;
 
     try {
-        // Опционально: можно достать старый image_url и удалить файл с диска с помощью fs.unlinkSync, 
-        // но сейчас просто перезаписываем путь в БД, чтобы не усложнять
         const result = await pool.query(
-            `UPDATE cars SET image_url = $1 WHERE id = $2 RETURNING id`,[imageUrl, carId]
+            `UPDATE cars SET image_url = $1 WHERE id = $2 RETURNING id`, [imageUrl, carId]
         );
 
         if (result.rowCount === 0) {
@@ -238,7 +292,7 @@ app.put('/api/admin/cars/:id/photo', upload.single('image'), async (req, res) =>
     }
 });
 
-app.delete('/api/admin/cars/:id', async (req, res) => {
+app.delete('/api/admin/cars/:id', authenticateAdmin, async (req, res) => {
     try {
         await pool.query('DELETE FROM cars WHERE id = $1', [req.params.id]);
         res.json({ message: 'Машина навсегда удалена из базы.' });

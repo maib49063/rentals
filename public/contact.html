@@ -114,21 +114,34 @@
             timeEl.textContent = `SYS_TIME: ${now.toISOString().substring(11, 19)} UTC`;
         }, 1000);
 
+
         // Обработка формы
         const form = document.getElementById('contact-form');
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const formData = new FormData(form);
             const dataObj = Object.fromEntries(formData.entries());
 
-            // Вывод JSON в консоль для API
-            console.log('PAYLOAD:', JSON.stringify(dataObj));
+            try {
+                const res = await fetch('/api/contact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dataObj)
+                });
 
-            alert('ДАННЫЕ УСПЕШНО ПЕРЕДАНЫ В СИСТЕМУ.');
-            form.reset();
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.error || 'СЕРВЕР НЕДОСТУПЕН');
+
+                alert(data.message);
+                form.reset();
+
+            } catch (err) {
+                alert('ОШИБКА: ' + err.message);
+            }
         });
-        
+
         document.addEventListener('DOMContentLoaded', () => {
             const token = localStorage.getItem('token');
             if (token) {

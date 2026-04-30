@@ -156,10 +156,20 @@
     </div>
 
     <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('Доступ закрыт. Авторизуйтесь как администратор.');
+            window.location.href = '/auth.html';
+        }
+
+        const headers = { 'Authorization': `Bearer ${token}` };
+
         // Загрузка бронирований
         async function loadBookings() {
             try {
-                const res = await fetch('/api/admin/bookings');
+                const res = await fetch('/api/admin/bookings', { headers });
+                if (res.status === 401 || res.status === 403) throw new Error('Нет прав админа');
+
                 const data = await res.json();
                 const tbody = document.getElementById('bookings-list');
                 tbody.innerHTML = '';
@@ -190,14 +200,16 @@
                     `;
                 });
             } catch (err) {
-                alert('Ошибка при загрузке бронирований');
+                alert('Ошибка при загрузке бронирований: ' + err.message);
+                if (err.message === 'Нет прав админа') window.location.href = '/auth.html';
             }
         }
 
         // Загрузка машин
         async function loadAdminCars() {
             try {
-                const res = await fetch('/api/admin/cars');
+                const res = await fetch('/api/admin/cars', { headers });
+                if (!res.ok) throw new Error('Ошибка доступа');
                 const data = await res.json();
                 const tbody = document.getElementById('admin-cars-list');
                 tbody.innerHTML = '';
@@ -226,7 +238,7 @@
                     `;
                 });
             } catch (err) {
-                alert('Ошибка при загрузке машин');
+                console.error(err);
             }
         }
 
@@ -234,7 +246,7 @@
         async function cancelBooking(id) {
             if (!confirm('Точно аннулировать бронь?')) return;
             try {
-                const res = await fetch(`/api/admin/bookings/${id}/cancel`, { method: 'PUT' });
+                const res = await fetch(`/api/admin/bookings/${id}/cancel`, { method: 'PUT', headers });
                 const data = await res.json();
                 alert(data.message || data.error);
                 loadBookings();
@@ -248,7 +260,7 @@
         async function deleteCar(id) {
             if (!confirm('Точно удалить машину? Она исчезнет с сайта навсегда.')) return;
             try {
-                const res = await fetch(`/api/admin/cars/${id}`, { method: 'DELETE' });
+                const res = await fetch(`/api/admin/cars/${id}`, { method: 'DELETE', headers });
                 const data = await res.json();
                 alert(data.message || data.error);
                 loadAdminCars();
@@ -271,14 +283,15 @@
             try {
                 const res = await fetch(`/api/admin/cars/${id}/photo`, {
                     method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` }, // Content-Type браузер подкинет сам
                     body: formData
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error);
 
                 alert(data.message);
-                fileInput.value = ''; // сброс инпута
-                loadAdminCars(); // на случай если захочешь выводить картинки прямо в админке
+                fileInput.value = '';
+                loadAdminCars();
             } catch (err) {
                 alert('Ошибка: ' + err.message);
             }
@@ -292,13 +305,14 @@
             try {
                 const res = await fetch('/api/admin/cars', {
                     method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
                     body: formData
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error);
                 alert(data.message);
                 e.target.reset();
-                loadAdminCars(); // Обновляем список машин
+                loadAdminCars();
             } catch (err) {
                 alert('Ошибка: ' + err.message);
             }
