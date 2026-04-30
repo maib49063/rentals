@@ -81,7 +81,15 @@ const authenticateAdmin = (req, res, next) => {
 // ==========================================
 app.post('/api/auth/register', async (req, res) => {
     const { email, password, passport, license } = req.body;
-    if (!email || !password) return res.status(400).json({ error: 'Заполните все обязательные поля.' });
+
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Заполните все обязательные поля.' });
+    }
+
+    // Жесткая валидация пароля на сервере
+    if (password.length < 8 || !/\d/.test(password)) {
+        return res.status(400).json({ error: 'Пароль должен содержать минимум 8 символов и хотя бы одну цифру.' });
+    }
 
     try {
         const userExists = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
