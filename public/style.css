@@ -352,7 +352,10 @@ a {
 
     .hero h1 {
         grid-column: 1 / -1;
-        font-size: 16vw;
+        font-size: 11vw;
+        /* Было 16vw, это перебор для такого длинного слова */
+        word-break: break-word;
+        /* Жесткий перенос, если всё-таки не влезет */
     }
 
     .manifesto-row {
