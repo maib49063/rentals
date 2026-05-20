@@ -21,13 +21,26 @@ const storage = multer.diskStorage({
         cb(null, dir);
     },
     filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname));
+        // Добавил рандом, чтобы файлы с одинаковым названием не перезаписывали друг друга
+        cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname).toLowerCase());
     }
 });
-const upload = multer({ storage: storage });
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Фильтр: пускаем только картинки
+const fileFilter = (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+
+    if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+    } else {
+        cb(new Error('Только изображения (JPG, PNG, WEBP, AVIF)!'), false);
+    }
+};
+
+const upload = multer({
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 } // Ограничение: максимум 5 МБ
 });
 
 // ==========================================
@@ -104,6 +117,29 @@ app.post('/api/auth/register', async (req, res) => {
         res.status(201).json({ message: 'Учетная запись успешно создана.', user: result.rows[0] });
     } catch (err) {
         res.status(500).json({ error: 'Внутренняя ошибка сервера.' });
+    }
+});
+
+// ==========================================
+// РОУТ: Слайдер на главной странице
+// ==========================================
+app.get('/api/slider', (req, res) => {
+    const sliderDir = path.join(__dirname, 'public', 'slider');
+
+    // Если папки нет, создаем ее, чтобы сервер не падал
+    if (!fs.existsSync(sliderDir)) {
+        fs.mkdirSync(sliderDir, { recursive: true });
+        return res.json({ images: [] });
+    }
+
+    try {
+        const files = fs.readdirSync(sliderDir);
+        // Фильтруем мусор, оставляем только картинки
+        const images = files.filter(file => /\.(jpg|jpeg|png|webp|avif)$/i.test(file));
+        res.json({ images });
+    } catch (err) {
+        console.error('[SYS] Ошибка чтения папки слайдера:', err);
+        res.status(500).json({ error: 'Ошибка сервера' });
     }
 });
 

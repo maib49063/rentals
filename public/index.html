@@ -5,20 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>РЕНТАЛС — Манифест</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Подключаем жирный Inter для заголовков и JetBrains Mono для технического текста -->
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700;800&display=swap"
         rel="stylesheet">
-
+    <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-
-    <!-- МОБИЛЬНОЕ МЕНЮ -->
     <div class="mobile-menu-overlay" id="mobile-menu">
         <div class="mobile-menu-header">
             <div class="logo">РЕНТАЛС</div>
@@ -32,60 +26,43 @@
         </nav>
     </div>
 
+    <header class="main-header grid-container">
+        <div class="header-logo"><a href="index.html">РЕНТАЛС</a></div>
+        <nav class="header-nav">
+            <a href="fleet.html">АВТОПАРК</a>
+            <a href="about.html">О НАс</a>
+            <a href="contact.html">Контакты</a>
+        </nav>
+        <div class="header-auth">
+            <a href="auth.html" id="header-auth-link" class="accent-link">Регистрация</a>
+        </div>
+        <button class="mobile-menu-trigger mono" id="open-menu">[ МЕНЮ ]</button>
+    </header>
+
     <main class="grid-container">
-
-        <!-- HEADER -->
-        <header class="main-header">
-            <div class="header-logo"><a href="index.html">РЕНТАЛС</a></div>
-
-            <nav class="header-nav">
-                <a href="fleet.html">АВТОПАРК</a>
-                <a href="about.html">О НАс</a>
-                <a href="contact.html">Контакты</a>
-            </nav>
-
-            <div class="header-auth">
-                <a href="auth.html" id="header-auth-link" class="accent-link">Регистрация</a>
-            </div>
-
-            <button class="mobile-menu-trigger mono" id="open-menu">[ МЕНЮ ]</button>
-        </header>
-
         <section class="hero">
             <h1>ОБЪЕКТИВНАЯ<br>ФУНКЦИЯ.</h1>
         </section>
-
-        <!-- МАНИФЕСТ (СТРОГАЯ СЕТКА) -->
         <section class="manifesto">
             <article class="manifesto-row">
                 <div class="manifesto-num mono">01 /</div>
                 <h2 class="manifesto-title">ДВИЖЕНИЕ — ЭТО СТРОГАЯ СИСТЕМА.</h2>
-                <div class="manifesto-desc mono">
-                    ТРАНСПОРТНЫЙ ПОТОК НЕ ТЕРПИТ ХАОСА. МЫ ПРЕДОСТАВЛЯЕМ АЛГОРИТМИЧЕСКИ ВЫВЕРЕННЫЙ ИНСТРУМЕНТ ДЛЯ
-                    ПЕРЕМЕЩЕНИЯ БЕЗ ЭМОЦИОНАЛЬНОГО ШУМА И ИЗБЫТОЧНОСТИ.
-                </div>
+                <div class="manifesto-desc mono">ТРАНСПОРТНЫЙ ПОТОК НЕ ТЕРПИТ ХАОСА. МЫ ПРЕДОСТАВЛЯЕМ АЛГОРИТМИЧЕСКИ
+                    ВЫВЕРЕННЫЙ ИНСТРУМЕНТ ДЛЯ ПЕРЕМЕЩЕНИЯ БЕЗ ЭМОЦИОНАЛЬНОГО ШУМА И ИЗБЫТОЧНОСТИ.</div>
             </article>
-
             <article class="manifesto-row">
                 <div class="manifesto-num mono">02 /</div>
                 <h2 class="manifesto-title">ВАШЕ ВРЕМЯ ИЗМЕРЯЕТСЯ В КИЛОМЕТРАХ.</h2>
-                <div class="manifesto-desc mono">
-                    НИКАКИХ СКРЫТЫХ СМЫСЛОВ. ТОЛЬКО ДИСТАНЦИЯ, СКОРОСТЬ И ЭФФЕКТИВНОСТЬ. АВТОМОБИЛЬ СВЕДЕН К ЕГО БАЗОВОЙ
-                    УТИЛИТАРНОЙ ФУНКЦИИ В ГОРОДСКОЙ СРЕДЕ.
-                </div>
+                <div class="manifesto-desc mono">НИКАКИХ СКРЫТЫХ СМЫСЛОВ. ТОЛЬКО ДИСТАНЦИЯ, СКОРОСТЬ И ЭФФЕКТИВНОСТЬ.
+                    АВТОМОБИЛЬ СВЕДЕН К ЕГО БАЗОВОЙ УТИЛИТАРНОЙ ФУНКЦИИ В ГОРОДСКОЙ СРЕДЕ.</div>
             </article>
-
             <article class="manifesto-row">
                 <div class="manifesto-num mono">03 /</div>
                 <h2 class="manifesto-title">ТРАНСПОРТ ДОЛЖЕН БЫТЬ ОБЪЕКТИВНЫМ.</h2>
-                <div class="manifesto-desc mono">
-                    ОДИНАКОВЫЕ КУЗОВА. ИДЕНТИЧНЫЕ ИНТЕРФЕЙСЫ. АБСОЛЮТНАЯ ПРЕДСКАЗУЕМОСТЬ ОПЫТА. ЛИЧНОЕ ВЛАДЕНИЕ
-                    УПРАЗДНЕНО ЗА НЕНАДОБНОСТЬЮ.
-                </div>
+                <div class="manifesto-desc mono">ОДИНАКОВЫЕ КУЗОВА. ИДЕНТИЧНЫЕ ИНТЕРФЕЙСЫ. АБСОЛЮТНАЯ ПРЕДСКАЗУЕМОСТЬ
+                    ОПЫТА. ЛИЧНОЕ ВЛАДЕНИЕ УПРАЗДНЕНО ЗА НЕНАДОБНОСТЬЮ.</div>
             </article>
         </section>
-
-        <!-- ВИЗУАЛЬНЫЙ БЛОК + РЕГЛАМЕНТ -->
         <section class="data-visual-section">
             <div class="tech-reglament">
                 <div class="reglament-title mono">ТЕХНИЧЕСКИЙ РЕГЛАМЕНТ АРЕНДЫ</div>
@@ -96,54 +73,74 @@
                     <li>> РЕЖИМ СВЯЗИ: 24/7 ONLINE</li>
                 </ul>
             </div>
-
             <div class="visual-wrapper">
                 <div class="red-square"></div>
-                <!-- ЧБ высококонтрастное фото -->
-                <img src="uploads/photo-1549317661-bd32c8ce0db2.avif"
-                    alt="Узел машины">
-                <div class="visual-caption mono">FIG. 01 — ОБЪЕКТ ТРАНСПОРТНОЙ ИНФРАСТРУКТУРЫ</div>
+                <div class="slider-viewport" id="slider-viewport">
+                    <!-- Сюда JS динамически вставит картинки -->
+                </div>
+                <div class="slider-controls mono">
+                    <button id="slider-prev">[ < ]</button>
+                            <div class="visual-caption" id="slider-caption">FIG. 01 — ОБЪЕКТ ТРАНСПОРТНОЙ ИНФРАСТРУКТУРЫ
+                            </div>
+                            <button id="slider-next">[ > ]</button>
+                </div>
             </div>
         </section>
-
-        <!-- ЖЕСТКИЙ CTA -->
         <section class="cta-section">
             <div class="cta-text">ИНТЕГРАЦИЯ В ПОТОК</div>
             <a href="auth.html" class="cta-button mono">[ ИНИЦИАЛИЗИРОВАТЬ ДОСТУП ]</a>
         </section>
-
     </main>
-
+    <script src="common.js"></script>
     <script>
-        // Меню
-        document.getElementById('open-menu').addEventListener('click', () => {
-            document.getElementById('mobile-menu').classList.add('is-open');
-            document.body.style.overflow = 'hidden';
-        });
-        document.getElementById('close-menu').addEventListener('click', () => {
-            document.getElementById('mobile-menu').classList.remove('is-open');
-            document.body.style.overflow = '';
-        });
+        document.addEventListener('DOMContentLoaded', async () => {
+            const viewport = document.getElementById('slider-viewport');
+            const caption = document.getElementById('slider-caption');
+            const btnPrev = document.getElementById('slider-prev');
+            const btnNext = document.getElementById('slider-next');
 
-        // Проверка токена (меняет ДОСТУП на ВЫХОД)
-        document.addEventListener('DOMContentLoaded', () => {
-            const token = localStorage.getItem('token');
-            if (token) {
-                const headerAuth = document.getElementById('header-auth-link');
-                const mobileAuth = document.getElementById('mobile-auth-link');
+            let slides = [];
+            let currentIndex = 0;
 
-                const logoutHtml = '<a href="#" id="logout-btn" class="accent-link">[ ВЫХОД ]</a>';
+            try {
+                const res = await fetch('/api/slider');
+                const data = await res.json();
 
-                if (headerAuth) headerAuth.outerHTML = logoutHtml;
-                if (mobileAuth) mobileAuth.outerHTML = logoutHtml;
+                if (!data.images || data.images.length === 0) {
+                    viewport.innerHTML = '<div style="padding: 40px; text-align: center; font-family: monospace; border: 2px dashed #000;">ПАПКА /public/slider ПУСТА</div>';
+                    return;
+                }
 
-                document.querySelectorAll('#logout-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        localStorage.removeItem('token');
-                        window.location.reload();
-                    });
+                // Генерируем слайды
+                data.images.forEach((imgName, index) => {
+                    const div = document.createElement('div');
+                    div.className = `slider-slide ${index === 0 ? 'active' : ''}`;
+                    // Сохраняем твой жесткий ЧБ-фильтр
+                    div.innerHTML = `<img src="/slider/${imgName}" alt="Slide ${index + 1}">`;
+                    viewport.appendChild(div);
+                    slides.push(div);
                 });
+
+                const updateSlider = () => {
+                    slides.forEach((slide, idx) => {
+                        slide.classList.toggle('active', idx === currentIndex);
+                    });
+                    // Меняем номер на подписи
+                    caption.textContent = `FIG. 0${currentIndex + 1} — ОБЪЕКТ ТРАНСПОРТНОЙ ИНФРАСТРУКТУРЫ`;
+                };
+
+                btnPrev.addEventListener('click', () => {
+                    currentIndex = (currentIndex === 0) ? slides.length - 1 : currentIndex - 1;
+                    updateSlider();
+                });
+
+                btnNext.addEventListener('click', () => {
+                    currentIndex = (currentIndex === slides.length - 1) ? 0 : currentIndex + 1;
+                    updateSlider();
+                });
+
+            } catch (err) {
+                viewport.innerHTML = '<div style="color:red; font-family: monospace;">ERR: СЕРВЕР НЕ ОТВЕЧАЕТ</div>';
             }
         });
     </script>
