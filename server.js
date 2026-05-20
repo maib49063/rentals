@@ -78,9 +78,8 @@ const authenticateAdmin = (req, res, next) => {
     jwt.verify(token, JWT_SECRET, (err, user) => {
         if (err) return res.status(403).json({ error: 'Недействительный или просроченный токен.' });
 
-        // Почта админа
-        const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@rentals.com';
-        if (user.email !== ADMIN_EMAIL) {
+        // Теперь проверяем по нормальной человеческой роли из БД
+        if (user.role !== 'admin') {
             return res.status(403).json({ error: 'Сюда нельзя. Только для админа.' });
         }
 
@@ -111,8 +110,9 @@ app.post('/api/auth/register', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
 
+        // Паспорт и права оставим пустыми, юзер заполнит их при первой аренде
         const result = await pool.query(
-            `INSERT INTO users (email, password_hash, passport, license) VALUES ($1, $2, $3, $4) RETURNING id, email`, [email, passwordHash, passport || '0000 000000', license || '0000000000']
+            `INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email`, [email, passwordHash]
         );
         res.status(201).json({ message: 'Учетная запись успешно создана.', user: result.rows[0] });
     } catch (err) {
@@ -155,8 +155,7 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(401).json({ error: 'Неверный email или пароль.' });
         }
 
-        const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '24h' });
-        res.json({ message: 'Авторизация успешна.', token });
+        const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '24h' }); res.json({ message: 'Авторизация успешна.', token });
     } catch (err) {
         res.status(500).json({ error: 'Внутренняя ошибка сервера.' });
     }
@@ -183,7 +182,8 @@ app.post('/api/contact', async (req, res) => {
 // ==========================================
 app.get('/api/cars', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM cars WHERE is_available = true ORDER BY created_at DESC');
+        // Показываем клиентам только свободные и не удаленные машины
+        const result = await pool.query('SELECT * FROM cars WHERE is_available = true AND is_deleted = false ORDER BY created_at DESC');
         res.json({ cars: result.rows });
     } catch (err) {
         res.status(500).json({ error: 'Ошибка загрузки автопарка.' });
@@ -194,13 +194,21 @@ app.get('/api/cars', async (req, res) => {
 // РОУТЫ: Аренда
 // ==========================================
 app.post('/api/bookings', authenticateToken, async (req, res) => {
-    const { car_model, start_date, end_date } = req.body;
+    const { car_model, start_date, end_date, passport, license } = req.body;
     const userId = req.user.id;
 
     if (!car_model || !start_date || !end_date) return res.status(400).json({ error: 'Укажите модель и даты аренды.' });
 
-    // Базовая проверка дат
-    if (new Date(start_date) > new Date(end_date)) {
+    // Жесткая проверка дат
+    const start = new Date(start_date);
+    const end = new Date(end_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Обнуляем время, чтобы сравнивать только дни
+
+    if (start < today) {
+        return res.status(400).json({ error: 'Путешествия во времени запрещены. Дата начала не может быть в прошлом.' });
+    }
+    if (start > end) {
         return res.status(400).json({ error: 'Дата начала не может быть позже даты завершения.' });
     }
 
@@ -215,6 +223,9 @@ app.post('/api/bookings', authenticateToken, async (req, res) => {
 
         const car_id = carRes.rows[0].id;
 
+        // Сохраняем/обновляем документы юзера в базе
+        await client.query('UPDATE users SET passport = $1, license = $2 WHERE id = $3', [passport, license, userId]);
+        
         // 2. ПРОВЕРКА НА ПЕРЕСЕЧЕНИЕ ДАТ (Ищем активные брони, которые наслаиваются на наши даты)
         const overlapRes = await client.query(`
             SELECT id FROM bookings 
@@ -291,7 +302,8 @@ app.put('/api/admin/bookings/:id/cancel', authenticateAdmin, async (req, res) =>
 
 app.get('/api/admin/cars', authenticateAdmin, async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM cars ORDER BY created_at DESC');
+        // Показываем админу только не удаленные машины
+        const result = await pool.query('SELECT * FROM cars WHERE is_deleted = false ORDER BY created_at DESC');
         res.json({ cars: result.rows });
     } catch (err) {
         res.status(500).json({ error: 'Ошибка загрузки автопарка.' });
@@ -338,8 +350,9 @@ app.put('/api/admin/cars/:id/photo', authenticateAdmin, upload.single('image'), 
 
 app.delete('/api/admin/cars/:id', authenticateAdmin, async (req, res) => {
     try {
-        await pool.query('DELETE FROM cars WHERE id = $1', [req.params.id]);
-        res.json({ message: 'Машина навсегда удалена из базы.' });
+        // Делаем Soft Delete: помечаем как удаленную и заодно снимаем с линии
+        await pool.query('UPDATE cars SET is_deleted = true, is_available = false WHERE id = $1', [req.params.id]);
+        res.json({ message: 'Машина списана из автопарка (скрыта).' });
     } catch (err) {
         res.status(500).json({ error: 'Ошибка при удалении.' });
     }

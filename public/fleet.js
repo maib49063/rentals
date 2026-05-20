@@ -2,6 +2,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const catalog = document.getElementById('catalog');
     let allCars = [];
 
+    // Запрещаем выбирать даты в прошлом в календаре
+    const todayStr = new Date().toISOString().split('T')[0];
+    document.getElementById('start_date').setAttribute('min', todayStr);
+    document.getElementById('end_date').setAttribute('min', todayStr);
+
     async function loadCars() {
         try {
             const res = await fetch('/api/cars');
@@ -95,17 +100,35 @@ document.addEventListener('DOMContentLoaded', () => {
             const modelName = document.getElementById('modal-model-name').textContent;
             const startDate = document.getElementById('start_date').value;
             const endDate = document.getElementById('end_date').value;
+            const passport = document.getElementById('passport').value;
+            const license = document.getElementById('license').value;
 
-            if (new Date(startDate) > new Date(endDate)) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (start < today) {
+                alert('Ошибка: Дата начала не может быть в прошлом!');
+                return;
+            }
+            if (start > end) {
                 alert('Ошибка: Дата завершения не может быть раньше даты начала!');
                 return;
             }
 
             try {
+                // ВОТ ЗДЕСЬ Я ДОБАВИЛ ПАСПОРТ И ПРАВА В ОТПРАВКУ
                 const res = await fetch('/api/bookings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ car_model: modelName, start_date: startDate, end_date: endDate })
+                    body: JSON.stringify({
+                        car_model: modelName,
+                        start_date: startDate,
+                        end_date: endDate,
+                        passport: passport,
+                        license: license
+                    })
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Ошибка сервера');
