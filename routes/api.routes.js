@@ -25,5 +25,6 @@ router.get('/admin/cars', authenticateAdmin, adminCtrl.getCars);
 router.post('/admin/cars', authenticateAdmin, upload.single('image'), adminCtrl.addCar);
 router.put('/admin/cars/:id/photo', authenticateAdmin, upload.single('image'), adminCtrl.updatePhoto);
 router.delete('/admin/cars/:id', authenticateAdmin, adminCtrl.deleteCar);
+router.put('/admin/cars/:id', authenticateAdmin, adminCtrl.updateCar);
 
 module.exports = router;

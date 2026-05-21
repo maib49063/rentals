@@ -43,6 +43,30 @@ exports.updatePhoto = async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Ошибка БД.' }); }
 };
 
+exports.updateCar = async (req, res) => {
+    const { category, price_per_minute } = req.body;
+    const carId = req.params.id;
+
+    if (!category || !price_per_minute) {
+        return res.status(400).json({ error: 'Заполните класс и цену.' });
+    }
+
+    try {
+        const result = await pool.query(
+            'UPDATE cars SET category = $1, price_per_minute = $2 WHERE id = $3 RETURNING id',
+            [category, price_per_minute, carId]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Машина не найдена.' });
+        }
+
+        res.json({ message: 'Данные машины успешно обновлены.' });
+    } catch (err) {
+        res.status(500).json({ error: 'Ошибка БД при обновлении.' });
+    }
+};
+
 exports.deleteCar = async (req, res) => {
     try {
         await pool.query('UPDATE cars SET is_deleted = true, is_available = false WHERE id = $1', [req.params.id]);

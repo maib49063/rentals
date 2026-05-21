@@ -46,6 +46,7 @@
             cursor: pointer;
             font-weight: bold;
             font-family: monospace;
+            margin-bottom: 5px;
         }
 
         button:hover {
@@ -61,7 +62,7 @@
         .action-cell {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 5px;
             align-items: flex-start;
         }
 
@@ -97,6 +98,40 @@
             color: #0f0;
             border: 1px solid #0f0;
             font-family: monospace;
+        }
+
+        /* Стили для модалки редактирования */
+        .edit-modal {
+            display: none;
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -30%);
+            background: #000;
+            border: 2px solid #0f0;
+            padding: 20px;
+            z-index: 100;
+            box-shadow: 0 0 20px #0f0;
+            width: 400px;
+        }
+
+        .edit-modal.active {
+            display: block;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 99;
+        }
+
+        .modal-overlay.active {
+            display: block;
         }
     </style>
 </head>
@@ -136,7 +171,6 @@
         <form id="add-car-form">
             <label>Модель авто:</label>
             <input type="text" name="model" required placeholder="Например: Audi A4">
-
             <label>Класс:</label>
             <select name="category" required>
                 <option value="economy">Эконом</option>
@@ -144,91 +178,76 @@
                 <option value="business">Бизнес</option>
                 <option value="special">Спецтехника</option>
             </select>
-
             <label>Цена за минуту (₽):</label>
             <input type="number" name="price_per_minute" required placeholder="25">
-
             <label>Фотография машины:</label>
             <input type="file" name="image" accept="image/*" required>
-
             <button type="submit" style="width: 100%; padding: 10px; margin-top: 10px;">ДОБАВИТЬ В АВТОПАРК</button>
+        </form>
+    </div>
+
+    <!-- МОДАЛКА РЕДАКТИРОВАНИЯ -->
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="edit-modal" id="edit-modal">
+        <h2 style="margin-top:0;">РЕДАКТИРОВАНИЕ</h2>
+        <form id="edit-car-form" class="form-block" style="border:none; padding:0; margin:0;">
+            <input type="hidden" id="edit-id">
+            <label>Класс:</label>
+            <select id="edit-category" required>
+                <option value="economy">Эконом</option>
+                <option value="comfort">Комфорт</option>
+                <option value="business">Бизнес</option>
+                <option value="special">Спецтехника</option>
+            </select>
+            <label>Новая цена (₽/мин):</label>
+            <input type="number" id="edit-price" required>
+            <div style="display:flex; justify-content:space-between; margin-top: 15px;">
+                <button type="submit">СОХРАНИТЬ</button>
+                <button type="button" class="cancel-btn" onclick="closeEditModal()">ОТМЕНА</button>
+            </div>
         </form>
     </div>
 
     <script>
         const token = localStorage.getItem('token');
-        if (!token) {
-            alert('Доступ закрыт. Авторизуйтесь как администратор.');
-            window.location.href = '/auth.html';
-        }
-
+        if (!token) { alert('Доступ закрыт. Авторизуйтесь как администратор.'); window.location.href = '/auth.html'; }
         const headers = { 'Authorization': `Bearer ${token}` };
 
-        // Загрузка бронирований
         async function loadBookings() {
             try {
                 const res = await fetch('/api/admin/bookings', { headers });
                 if (res.status === 401 || res.status === 403) throw new Error('Нет прав админа');
-
                 const data = await res.json();
                 const tbody = document.getElementById('bookings-list');
                 tbody.innerHTML = '';
-
-                if (data.bookings.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6">Бронирований пока нет.</td></tr>';
-                    return;
-                }
+                if (data.bookings.length === 0) { tbody.innerHTML = '<tr><td colspan="6">Бронирований пока нет.</td></tr>'; return; }
 
                 data.bookings.forEach(b => {
                     const created = new Date(b.created_at).toLocaleString('ru-RU');
                     const start = b.start_date ? new Date(b.start_date).toLocaleDateString('ru-RU') : '---';
                     const end = b.end_date ? new Date(b.end_date).toLocaleDateString('ru-RU') : '---';
-
-                    const actionBtn = b.status === 'active'
-                        ? `<button class="cancel-btn" onclick="cancelBooking('${b.booking_id}')">Аннулировать</button>`
-                        : '---';
-
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${created}</td>
-                            <td>${b.user_email}</td>
-                            <td>${b.car_model}</td>
-                            <td>${start} — ${end}</td>
-                            <td>[${b.status.toUpperCase()}]</td>
-                            <td>${actionBtn}</td>
-                        </tr>
-                    `;
+                    const actionBtn = b.status === 'active' ? `<button class="cancel-btn" onclick="cancelBooking('${b.booking_id}')">Аннулировать</button>` : '---';
+                    tbody.innerHTML += `<tr><td>${created}</td><td>${b.user_email}</td><td>${b.car_model}</td><td>${start} — ${end}</td><td>[${b.status.toUpperCase()}]</td><td>${actionBtn}</td></tr>`;
                 });
-            } catch (err) {
-                alert('Ошибка при загрузке бронирований: ' + err.message);
-                if (err.message === 'Нет прав админа') window.location.href = '/auth.html';
-            }
+            } catch (err) { alert(err.message); if (err.message === 'Нет прав админа') window.location.href = '/auth.html'; }
         }
 
-        // Загрузка машин
         async function loadAdminCars() {
             try {
                 const res = await fetch('/api/admin/cars', { headers });
-                if (!res.ok) throw new Error('Ошибка доступа');
                 const data = await res.json();
                 const tbody = document.getElementById('admin-cars-list');
                 tbody.innerHTML = '';
-
-                if (data.cars.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5">Автопарк пуст.</td></tr>';
-                    return;
-                }
+                if (data.cars.length === 0) { tbody.innerHTML = '<tr><td colspan="5">Автопарк пуст.</td></tr>'; return; }
 
                 data.cars.forEach(car => {
                     const status = car.is_available ? 'СВОБОДНА' : 'В АРЕНДЕ';
                     tbody.innerHTML += `
                         <tr>
-                            <td>${car.model}</td>
-                            <td>${car.category.toUpperCase()}</td>
-                            <td>${car.price_per_minute}</td>
-                            <td>[${status}]</td>
+                            <td>${car.model}</td><td>${car.category.toUpperCase()}</td><td>${car.price_per_minute}</td><td>[${status}]</td>
                             <td class="action-cell">
-                                <button class="delete-btn" onclick="deleteCar('${car.id}')">Удалить машину</button>
+                                <button onclick="openEditModal('${car.id}', '${car.category}', '${car.price_per_minute}')">Изменить цену/класс</button>
+                                <button class="delete-btn" onclick="deleteCar('${car.id}')">Списать машину</button>
                                 <div class="photo-upload-container">
                                     <input type="file" id="photo-${car.id}" accept="image/*">
                                     <button onclick="updateCarPhoto('${car.id}')" style="font-size: 10px;">Обновить фото</button>
@@ -237,12 +256,9 @@
                         </tr>
                     `;
                 });
-            } catch (err) {
-                console.error(err);
-            }
+            } catch (err) { console.error(err); }
         }
 
-        // Отмена брони
         async function cancelBooking(id) {
             if (!confirm('Точно аннулировать бронь?')) return;
             try {
@@ -250,72 +266,75 @@
                 const data = await res.json();
                 alert(data.message || data.error);
                 loadBookings();
-                loadAdminCars();
-            } catch (err) {
-                alert('Ошибка');
-            }
+            } catch (err) { alert('Ошибка'); }
         }
 
-        // Удаление машины
         async function deleteCar(id) {
-            if (!confirm('Точно удалить машину? Она исчезнет с сайта навсегда.')) return;
+            if (!confirm('Точно списать машину? Она исчезнет с сайта.')) return;
             try {
                 const res = await fetch(`/api/admin/cars/${id}`, { method: 'DELETE', headers });
                 const data = await res.json();
                 alert(data.message || data.error);
                 loadAdminCars();
-            } catch (err) {
-                alert('Ошибка');
-            }
+            } catch (err) { alert('Ошибка'); }
         }
 
-        // Обновление фото конкретной машины
         async function updateCarPhoto(id) {
             const fileInput = document.getElementById(`photo-${id}`);
-            if (!fileInput.files.length) {
-                alert('Эй, ты забыл выбрать файл!');
-                return;
-            }
-
+            if (!fileInput.files.length) { alert('Выберите файл!'); return; }
             const formData = new FormData();
             formData.append('image', fileInput.files[0]);
+            try {
+                const res = await fetch(`/api/admin/cars/${id}/photo`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                alert(data.message); fileInput.value = ''; loadAdminCars();
+            } catch (err) { alert('Ошибка: ' + err.message); }
+        }
+
+        // Логика модалки редактирования
+        function openEditModal(id, category, price) {
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-category').value = category;
+            document.getElementById('edit-price').value = price;
+            document.getElementById('edit-modal').classList.add('active');
+            document.getElementById('modal-overlay').classList.add('active');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.remove('active');
+            document.getElementById('modal-overlay').classList.remove('active');
+        }
+
+        document.getElementById('edit-car-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const category = document.getElementById('edit-category').value;
+            const price = document.getElementById('edit-price').value;
 
             try {
-                const res = await fetch(`/api/admin/cars/${id}/photo`, {
+                const res = await fetch(`/api/admin/cars/${id}`, {
                     method: 'PUT',
-                    headers: { 'Authorization': `Bearer ${token}` }, // Content-Type браузер подкинет сам
-                    body: formData
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ category: category, price_per_minute: price })
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error);
-
                 alert(data.message);
-                fileInput.value = '';
+                closeEditModal();
                 loadAdminCars();
-            } catch (err) {
-                alert('Ошибка: ' + err.message);
-            }
-        }
+            } catch (err) { alert('Ошибка: ' + err.message); }
+        });
 
-        // Добавление машины
         document.getElementById('add-car-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
-
             try {
-                const res = await fetch('/api/admin/cars', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    body: formData
-                });
+                const res = await fetch('/api/admin/cars', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error);
-                alert(data.message);
-                e.target.reset();
-                loadAdminCars();
-            } catch (err) {
-                alert('Ошибка: ' + err.message);
-            }
+                alert(data.message); e.target.reset(); loadAdminCars();
+            } catch (err) { alert('Ошибка: ' + err.message); }
         });
 
         loadBookings();
@@ -323,4 +342,4 @@
     </script>
 </body>
 
-</html>
+</html> 

@@ -1,29 +1,58 @@
 document.addEventListener('DOMContentLoaded', () => {
     const catalog = document.getElementById('catalog');
+    const searchStart = document.getElementById('search_start');
+    const searchEnd = document.getElementById('search_end');
+    const btnSearch = document.getElementById('btn-search');
+
     let allCars = [];
 
-    // Запрещаем выбирать даты в прошлом в календаре
+    // Блокируем выбор прошлых дат
     const todayStr = new Date().toISOString().split('T')[0];
+    searchStart.setAttribute('min', todayStr);
+    searchEnd.setAttribute('min', todayStr);
     document.getElementById('start_date').setAttribute('min', todayStr);
     document.getElementById('end_date').setAttribute('min', todayStr);
 
     async function loadCars() {
         try {
-            const res = await fetch('/api/cars');
+            let url = '/api/cars';
+            const s = searchStart.value;
+            const e = searchEnd.value;
+
+            // Если даты выбраны, кидаем их серверу
+            if (s && e) {
+                url += `?start_date=${s}&end_date=${e}`;
+            }
+
+            const res = await fetch(url);
             const data = await res.json();
             allCars = data.cars;
+
+            // Сбрасываем фильтр категорий на "Все" при новом поиске
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
+
             renderCars('all');
         } catch (err) {
             catalog.innerHTML = '<h2>Ошибка связи с сервером.</h2>';
         }
     }
 
+    // Обработка кнопки поиска
+    btnSearch.addEventListener('click', () => {
+        if (searchStart.value && searchEnd.value && searchStart.value > searchEnd.value) {
+            alert('Дата "С" не может быть позже даты "ПО"');
+            return;
+        }
+        loadCars();
+    });
+
     function renderCars(filterCategory) {
         catalog.innerHTML = '';
         const filtered = filterCategory === 'all' ? allCars : allCars.filter(c => c.category === filterCategory);
 
         if (filtered.length === 0) {
-            catalog.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; border: 2px dashed #000; text-align: center;">В ДАННОЙ КАТЕГОРИИ НЕТ СВОБОДНЫХ МАШИН</div>';
+            catalog.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; border: 2px dashed #000; text-align: center;">НА ЭТИ ДАТЫ НЕТ СВОБОДНЫХ МАШИН</div>';
             return;
         }
 
@@ -44,6 +73,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.btn-rent').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.getElementById('modal-model-name').textContent = e.target.getAttribute('data-model');
+
+                // АВТОЗАПОЛНЕНИЕ ДАТ ИЗ ПОИСКА В МОДАЛКУ
+                if (searchStart.value) document.getElementById('start_date').value = searchStart.value;
+                if (searchEnd.value) document.getElementById('end_date').value = searchEnd.value;
+
                 document.getElementById('booking-modal').classList.add('is-open');
                 document.body.style.overflow = 'hidden';
             });
@@ -77,7 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         let isValid = true;
         const inputs = form.querySelectorAll('input[required]');
-        const rules = { passport: /^\d{4}\s\d{6}$/, license: /^.{10}$/, phone: /^\+7\d{10}$/ };
+        // ДОБАВЛЕНО ПРАВИЛО ДЛЯ КАРТЫ (ровно 16 цифр)
+        const rules = { passport: /^\d{4}\s\d{6}$/, license: /^.{10}$/, phone: /^\+7\d{10}$/, card_number: /^\d{16}$/ };
 
         inputs.forEach(input => {
             const val = input.value.trim();
@@ -118,7 +153,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                // ВОТ ЗДЕСЬ Я ДОБАВИЛ ПАСПОРТ И ПРАВА В ОТПРАВКУ
                 const res = await fetch('/api/bookings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -128,14 +162,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         end_date: endDate,
                         passport: passport,
                         license: license
+                        // Карту на бэкенд не шлем для безопасности, бэк сам генерит чек
                     })
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Ошибка сервера');
 
-                alert('УСПЕХ: ' + data.message);
+                alert('СТАТУС ТРАНЗАКЦИИ: ' + data.message);
                 closeModal();
-                loadCars();
+                loadCars(); // Перезагрузит с учетом выбранных дат в поиске
             } catch (err) { alert('ОШИБКА: ' + err.message); }
         }
     });
@@ -144,5 +179,6 @@ document.addEventListener('DOMContentLoaded', () => {
         input.addEventListener('input', () => { if (input.classList.contains('error')) input.classList.remove('error'); });
     });
 
+    // Загрузка по умолчанию без дат
     loadCars();
 });

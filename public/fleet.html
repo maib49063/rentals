@@ -41,6 +41,27 @@
         <section class="page-title grid-container">
             <h1>Доступные<br>инструменты.</h1>
         </section>
+
+        <!-- ПАНЕЛЬ ПОИСКА СВОБОДНЫХ АВТО -->
+        <section class="grid-container"
+            style="margin-bottom: 24px; border-bottom: 2px solid var(--color-text); padding-bottom: 24px;">
+            <div style="grid-column: 1 / -1; display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                    <div style="font-size:12px; font-weight:bold; margin-bottom:5px;">ИСКАТЬ С ДАТЫ:</div>
+                    <input type="date" id="search_start"
+                        style="width:100%; border: none; border-bottom: 2px solid #000; padding: 8px 0; font-family: inherit; font-size: 16px; font-weight: 700; background: transparent; outline: none;">
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <div style="font-size:12px; font-weight:bold; margin-bottom:5px;">ПО ДАТУ:</div>
+                    <input type="date" id="search_end"
+                        style="width:100%; border: none; border-bottom: 2px solid #000; padding: 8px 0; font-family: inherit; font-size: 16px; font-weight: 700; background: transparent; outline: none;">
+                </div>
+                <button id="btn-search"
+                    style="padding: 10px 24px; background: var(--color-text); color: var(--color-bg); border: none; font-weight: 900; text-transform: uppercase; cursor: pointer; height: 40px; white-space: nowrap;">Найти
+                    свободные</button>
+            </div>
+        </section>
+
         <nav class="filters grid-container" id="filters">
             <button class="filter-btn active" data-filter="all">Все классы</button>
             <button class="filter-btn" data-filter="economy">Эконом</button>
@@ -80,7 +101,17 @@
                     <input type="date" id="end_date" name="end_date" required>
                     <span class="error-msg">Укажите дату завершения.</span>
                 </div>
-                <button type="submit" class="btn-submit">ПОДТВЕРДИТЬ БРОНИРОВАНИЕ</button>
+
+                <!-- БЛОК ОПЛАТЫ ИЗ ШАГА 2 -->
+                <div class="form-group"
+                    style="margin-top: 20px; border-top: 2px dashed var(--color-text); padding-top: 20px;">
+                    <div style="font-size:12px; font-weight:bold; color:var(--color-accent); margin-bottom:5px;">ДАННЫЕ
+                        БАНКОВСКОЙ КАРТЫ ДЛЯ ОПЛАТЫ</div>
+                    <input type="text" id="card_number" name="card_number" placeholder="Номер карты (16 цифр)" required>
+                    <span class="error-msg">Обязательное поле. Только 16 цифр без пробелов.</span>
+                </div>
+
+                <button type="submit" class="btn-submit">ОПЛАТИТЬ И ЗАБРОНИРОВАТЬ</button>
             </form>
         </div>
     </aside>
