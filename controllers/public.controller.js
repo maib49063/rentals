@@ -13,6 +13,8 @@ exports.getSlider = (req, res) => {
 };
 
 exports.contact = (req, res) => {
+    const { name, email, message } = req.body;
+    console.log('[SYS] Новое сообщение:', { name, email, message });
     res.json({ message: 'Сообщение успешно отправлено.' });
 };
 
