@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="car-img"><img src="${imgSrc}" alt="${car.model}"></div>
                 <h2>${car.model}</h2>
                 <ul class="specs"><li>Класс: ${car.category.toUpperCase()}</li></ul>
-                <div class="price">${car.price_per_minute} ₽ / МИН</div>
+                <div class="price">${car.price_per_day} ₽ / СУТКИ</div>
                 <button class="btn-rent" data-model="${car.model}">Арендовать</button>
             `;
             catalog.appendChild(article);

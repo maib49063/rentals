@@ -26,10 +26,10 @@ exports.getCars = async (req, res) => {
 };
 
 exports.addCar = async (req, res) => {
-    const { model, category, price_per_minute } = req.body;
+    const { model, category, price_per_day } = req.body;
     let imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
     try {
-        await pool.query(`INSERT INTO cars (model, category, price_per_minute, image_url) VALUES ($1, $2, $3, $4)`, [model, category, price_per_minute, imageUrl]);
+        await pool.query(`INSERT INTO cars (model, category, price_per_day, image_url) VALUES ($1, $2, $3, $4)`, [model, category, price_per_day, imageUrl]);
         res.status(201).json({ message: 'Добавлено.' });
     } catch (err) { res.status(500).json({ error: 'Ошибка БД.' }); }
 };
@@ -44,17 +44,17 @@ exports.updatePhoto = async (req, res) => {
 };
 
 exports.updateCar = async (req, res) => {
-    const { category, price_per_minute } = req.body;
+    const { category, price_per_day } = req.body;
     const carId = req.params.id;
 
-    if (!category || !price_per_minute) {
+    if (!category || !price_per_day) {
         return res.status(400).json({ error: 'Заполните класс и цену.' });
     }
 
     try {
         const result = await pool.query(
-            'UPDATE cars SET category = $1, price_per_minute = $2 WHERE id = $3 RETURNING id',
-            [category, price_per_minute, carId]
+            'UPDATE cars SET category = $1, price_per_day = $2 WHERE id = $3 RETURNING id',
+            [category, price_per_day, carId]
         );
 
         if (result.rowCount === 0) {

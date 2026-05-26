@@ -1,5 +1,10 @@
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_rentals_key_123';
+
+// Если забыл .env — сервак ляжет сразу и ты это заметишь, а не в продакшене.
+if (!process.env.JWT_SECRET) {
+    throw new Error('КРИТИЧЕСКАЯ ОШИБКА: JWT_SECRET не задан в .env файле!');
+}
+const JWT_SECRET = process.env.JWT_SECRET
 
 const authenticateToken = (req, res, next) => {
     const token = req.headers['authorization']?.split(' ')[1];

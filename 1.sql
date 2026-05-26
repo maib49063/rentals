@@ -9,7 +9,6 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    -- Убрал 'balance' отсюда
     CREATE TYPE payment_method AS ENUM ('card', 'bonus');
 EXCEPTION
     WHEN duplicate_object THEN null;
@@ -26,6 +25,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     passport VARCHAR(50),
     license VARCHAR(50),
+    role VARCHAR(20) NOT NULL DEFAULT 'user', -- ДОБАВЛЕНА РОЛЬ
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -34,8 +34,10 @@ CREATE TABLE IF NOT EXISTS cars (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     model VARCHAR(100) NOT NULL,
     category VARCHAR(50) NOT NULL,
-    price_per_minute NUMERIC(10, 2) NOT NULL,
+    price_per_day NUMERIC(10, 2) NOT NULL, -- ИСПРАВЛЕНО НА ПОСУТОЧНУЮ ОПЛАТУ
+    image_url VARCHAR(255), -- ДОБАВЛЕНА КОЛОНКА ДЛЯ ФОТО
     is_available BOOLEAN NOT NULL DEFAULT true,
+    is_deleted BOOLEAN NOT NULL DEFAULT false, -- ДОБАВЛЕН ФЛАГ УДАЛЕНИЯ ДЛЯ АДМИНКИ
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -70,23 +72,22 @@ CREATE INDEX IF NOT EXISTS idx_cars_category ON cars(category);
 CREATE INDEX IF NOT EXISTS idx_bookings_user_id ON bookings(user_id);
 CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id);
 
-
 -- =================================================================
--- ЗАПОЛНЕНИЕ БАЗЫ ДАННЫХ (Автопарк из вашего HTML)
+-- ЗАПОЛНЕНИЕ БАЗЫ ДАННЫХ
 -- =================================================================
--- Добавляем авто, только если их еще нет в базе
-INSERT INTO cars (model, category, price_per_minute, is_available)
-SELECT 'VW Polo', 'economy', 12.00, true
+-- Цены переделаны под посуточную аренду
+INSERT INTO cars (model, category, price_per_day, is_available)
+SELECT 'VW Polo', 'economy', 1500.00, true
 WHERE NOT EXISTS (SELECT 1 FROM cars WHERE model = 'VW Polo');
 
-INSERT INTO cars (model, category, price_per_minute, is_available)
-SELECT 'Toyota Camry', 'comfort', 22.00, true
+INSERT INTO cars (model, category, price_per_day, is_available)
+SELECT 'Toyota Camry', 'comfort', 3500.00, true
 WHERE NOT EXISTS (SELECT 1 FROM cars WHERE model = 'Toyota Camry');
 
-INSERT INTO cars (model, category, price_per_minute, is_available)
-SELECT 'BMW 5 Series', 'business', 35.00, true
+INSERT INTO cars (model, category, price_per_day, is_available)
+SELECT 'BMW 5 Series', 'business', 6000.00, true
 WHERE NOT EXISTS (SELECT 1 FROM cars WHERE model = 'BMW 5 Series');
 
-INSERT INTO cars (model, category, price_per_minute, is_available)
-SELECT 'VW Crafter', 'special', 28.00, true
+INSERT INTO cars (model, category, price_per_day, is_available)
+SELECT 'VW Crafter', 'special', 4500.00, true
 WHERE NOT EXISTS (SELECT 1 FROM cars WHERE model = 'VW Crafter');
