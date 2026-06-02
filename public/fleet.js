@@ -162,16 +162,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         end_date: endDate,
                         passport: passport,
                         license: license
-                        // Карту на бэкенд не шлем для безопасности, бэк сам генерит чек
                     })
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Ошибка сервера');
 
-                alert('СТАТУС ТРАНЗАКЦИИ: ' + data.message);
-                closeModal();
-                loadCars(); // Перезагрузит с учетом выбранных дат в поиске
-            } catch (err) { alert('ОШИБКА: ' + err.message); }
+                // Передаем false (это не ошибка, а успех) и коллбэк на закрытие и обновление
+                sysAlert('СТАТУС ТРАНЗАКЦИИ: ' + data.message, false, () => {
+                    closeModal();
+                    loadCars();
+                });
+            } catch (err) {
+                // Вызываем красный алерт ошибки
+                sysAlert('ОШИБКА: ' + err.message, true);
+            }
         }
     });
 

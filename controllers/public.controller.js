@@ -114,3 +114,100 @@ exports.bookCar = async (req, res) => {
         client.release();
     }
 };
+
+// --- ДОБАВИТЬ В КОНЕЦ public.controller.js ---
+
+exports.getProfile = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const userRes = await pool.query('SELECT email, passport, license FROM users WHERE id = $1', [userId]);
+        if (userRes.rows.length === 0) return res.status(404).json({ error: 'Пользователь не найден.' });
+
+        const bookingsRes = await pool.query(`
+            SELECT b.id AS booking_id, b.status, b.start_date, b.end_date, b.created_at,
+                   c.model AS car_model, c.category,
+                   p.amount AS payment_amount, p.status AS payment_status
+            FROM bookings b
+            JOIN cars c ON b.car_id = c.id
+            LEFT JOIN payments p ON p.booking_id = b.id
+            WHERE b.user_id = $1
+            ORDER BY b.created_at DESC
+        `, [userId]);
+
+        res.json({
+            user: userRes.rows[0],
+            bookings: bookingsRes.rows
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Ошибка загрузки профиля.' });
+    }
+};
+
+exports.updateProfile = async (req, res) => {
+    const userId = req.user.id;
+    const { passport, license } = req.body;
+
+    // Валидация на скорую руку (на бэке она обязательна)
+    if (passport && !/^\d{4}\s\d{6}$/.test(passport)) {
+        return res.status(400).json({ error: 'Неверный формат паспорта.' });
+    }
+    if (license && license.length !== 10) {
+        return res.status(400).json({ error: 'Права должны быть ровно 10 символов.' });
+    }
+
+    try {
+        await pool.query('UPDATE users SET passport = $1, license = $2 WHERE id = $3', [passport, license, userId]);
+        res.json({ message: 'Данные профиля успешно сохранены.' });
+    } catch (err) {
+        res.status(500).json({ error: 'Ошибка обновления профиля.' });
+    }
+};
+
+// --- ДОБАВИТЬ В КОНЕЦ public.controller.js ---
+
+exports.changePassword = async (req, res) => {
+    const userId = req.user.id;
+    const { password, password_confirm } = req.body;
+
+    if (!password || !password_confirm) {
+        return res.status(400).json({ error: 'Заполните оба поля пароля.' });
+    }
+    if (password !== password_confirm) {
+        return res.status(400).json({ error: 'Пароли не совпадают.' });
+    }
+    if (password.length < 8 || !/\d/.test(password)) {
+        return res.status(400).json({ error: 'Пароль должен быть не менее 8 символов и содержать минимум одну цифру.' });
+    }
+
+    try {
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(password, salt);
+
+        await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [passwordHash, userId]);
+        res.json({ message: 'Пароль успешно изменен.' });
+    } catch (err) {
+        res.status(500).json({ error: 'Ошибка сервера при смене пароля.' });
+    }
+};
+
+exports.cancelBooking = async (req, res) => {
+    const userId = req.user.id;
+    const bookingId = req.params.id;
+
+    try {
+        // Проверяем, что бронь реально существует, активна и принадлежит этому юзеру
+        const bookingRes = await pool.query(
+            "SELECT id FROM bookings WHERE id = $1 AND user_id = $2 AND status = 'active'",
+            [bookingId, userId]
+        );
+
+        if (bookingRes.rows.length === 0) {
+            return res.status(404).json({ error: 'Активное бронирование не найдено.' });
+        }
+
+        await pool.query("UPDATE bookings SET status = 'cancelled' WHERE id = $1", [bookingId]);
+        res.json({ message: 'Бронирование успешно аннулировано.' });
+    } catch (err) {
+        res.status(500).json({ error: 'Ошибка сервера при отмене бронирования.' });
+    }
+};

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>РЕНТАЛС — Терминал Пользователя</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="profile.css">
+</head>
+
+<body>
+    <div class="mobile-menu-overlay" id="mobile-menu">
+        <div class="mobile-menu-header">
+            <div class="logo">Ренталс</div>
+            <button class="btn-close-menu" id="close-menu">ЗАКРЫТЬ</button>
+        </div>
+        <nav class="mobile-nav">
+            <a href="index.html">Манифест</a>
+            <a href="fleet.html">Автопарк</a>
+            <a href="about.html">О нас</a>
+            <a href="contact.html">Контакты</a>
+            <a href="#" class="logout-btn accent">Выход</a>
+        </nav>
+    </div>
+
+    <header class="main-header grid-container">
+        <div class="header-logo"><a href="index.html">РЕНТАЛС // СИСТЕМА</a></div>
+        <nav class="header-nav">
+            <a href="index.html">Главная</a>
+            <a href="fleet.html">Автопарк</a>
+            <a href="about.html">О нас</a>
+            <a href="contact.html">Контакты</a>
+        </nav>
+        <div class="header-auth" id="header-auth-box">
+            <a href="#" class="logout-btn accent">ВЫХОД</a>
+        </div>
+        <button class="mobile-menu-trigger" id="open-menu">МЕНЮ</button>
+    </header>
+
+    <main>
+        <section class="page-title grid-container" style="margin-bottom: 60px;">
+            <h1>Кабинет<br></h1>
+        </section>
+
+        <section class="profile-layout grid-container">
+            <!-- ЛЕВАЯ СЕКЦИЯ: ПОЛЬЗОВАТЕЛЬ И СМЕНА ПАРОЛЯ -->
+            <div class="profile-info">
+                <div class="tech-label mono">[USER.ACTIVE.SESSION]</div>
+                <h2 style="margin-top: 16px;">АККАУНТ</h2>
+
+                <div class="info-group" style="margin-bottom: 40px;">
+                    <span class="info-label mono">EMAIL АДРЕС</span>
+                    <div class="info-value" id="user-email">---</div>
+                </div>
+
+                <div class="tech-label mono">[AUTH.PASSWORD.RESET]</div>
+                <h2 style="margin-top: 16px; margin-bottom: 24px;">СМЕНА ПАРОЛЯ</h2>
+                <form id="password-form" style="display: flex; flex-direction: column; gap: 24px;">
+                    <div class="info-group">
+                        <label class="info-label mono" for="password">НОВЫЙ ПАРОЛЬ</label>
+                        <input type="password" id="password" name="password" class="profile-input" required>
+                        <span class="input-hint mono">МИНИМУМ 8 СИМВОЛОВ, 1 ЦИФРА</span>
+                    </div>
+                    <div class="info-group">
+                        <label class="info-label mono" for="password_confirm">ПОВТОР ПАРОЛЯ</label>
+                        <input type="password" id="password_confirm" name="password_confirm" class="profile-input"
+                            required>
+                    </div>
+                    <button type="submit" class="btn-update-password">ОБНОВИТЬ ПАРОЛЬ</button>
+                </form>
+            </div>
+
+            <!-- ПРАВАЯ СЕКЦИЯ: РАБОЧАЯ ИСТОРИЯ ЗАКАЗОВ -->
+            <div class="profile-bookings">
+                <div class="tech-label mono">[LOG.ACTIVE.ARCHIVE]</div>
+                <h2>ИСТОРИЯ ИНТЕГРАЦИЙ</h2>
+                <div id="bookings-container">
+                    <div class="mono" style="padding: 40px; border: 2px dashed #000; text-align: center;">ЗАГРУЗКА
+                        ЛОГОВ...</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="common.js"></script>
+    <script src="profile.js"></script>
+</body>
+
+</html>

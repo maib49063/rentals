@@ -316,7 +316,7 @@
                 const res = await fetch(`/api/admin/cars/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ category: category, price_per_minute: price })
+                    body: JSON.stringify({ category: category, price_per_day: price })
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error);

@@ -14,9 +14,6 @@ EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
 
--- =================================================================
--- СОЗДАНИЕ ТАБЛИЦ
--- =================================================================
 
 -- 3. Таблица ПОЛЬЗОВАТЕЛИ (users)
 CREATE TABLE IF NOT EXISTS users (
@@ -65,17 +62,10 @@ CREATE TABLE IF NOT EXISTS payments (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- =================================================================
--- ИНДЕКСЫ (Для ускорения работы базы данных)
--- =================================================================
 CREATE INDEX IF NOT EXISTS idx_cars_category ON cars(category);
 CREATE INDEX IF NOT EXISTS idx_bookings_user_id ON bookings(user_id);
 CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id);
 
--- =================================================================
--- ЗАПОЛНЕНИЕ БАЗЫ ДАННЫХ
--- =================================================================
--- Цены переделаны под посуточную аренду
 INSERT INTO cars (model, category, price_per_day, is_available)
 SELECT 'VW Polo', 'economy', 1500.00, true
 WHERE NOT EXISTS (SELECT 1 FROM cars WHERE model = 'VW Polo');

@@ -31,4 +31,15 @@ router.put('/admin/cars/:id', authenticateAdmin, adminCtrl.updateCar); // Обн
 router.put('/admin/cars/:id/photo', authenticateAdmin, upload.single('image'), adminCtrl.updatePhoto);
 router.delete('/admin/cars/:id', authenticateAdmin, adminCtrl.deleteCar);
 
+// --- ДОБАВИТЬ В api.routes.js ---
+router.get('/profile', authenticateToken, publicCtrl.getProfile);
+router.put('/profile', authenticateToken, publicCtrl.updateProfile);
+const bcrypt = require('bcrypt'); // Добавь на самый верх public.controller.js
+// --- ДОБАВИТЬ В api.routes.js ---
+router.put('/profile/password', authenticateToken, publicCtrl.changePassword);
+router.put('/bookings/:id/cancel', authenticateToken, publicCtrl.cancelBooking);
+
+// --- ДОБАВИТЬ В api.routes.js ---
+router.post('/auth/forgot-password', authCtrl.requestResetCode); // Шаг 1: отправка кода
+router.post('/auth/reset-password', authCtrl.resetPassword);       // Шаг 2: сброс по коду
 module.exports = router;

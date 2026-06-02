@@ -1,0 +1,206 @@
+--- START OF FILE profile.css --- .profile-layout {
+    margin-bottom: 120px;
+    align-items: start;
+}
+
+/* ЛЕВАЯ ПАНЕЛЬ С ДАННЫМИ */
+.profile-info {
+    grid-column: 1 / 5;
+    border: 3px solid var(--color-text);
+    padding: 40px 24px;
+    background-color: var(--color-bg);
+}
+
+.profile-info h2 {
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    margin: 8px 0 20px;
+}
+
+.tech-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-accent);
+}
+
+.info-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.info-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: #666;
+}
+
+.info-value {
+    font-size: 18px;
+    font-weight: 700;
+    border-bottom: 2px solid var(--color-text);
+    padding-bottom: 8px;
+    text-transform: none;
+    /* Емейлы не капсим искусственно */
+}
+
+.profile-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid var(--color-text);
+    padding: 12px 0 4px;
+    font-size: 18px;
+    font-weight: 700;
+    font-family: inherit;
+    color: var(--color-text);
+}
+
+.profile-input:focus {
+    outline: none;
+    border-bottom-color: var(--color-accent);
+}
+
+.input-hint {
+    font-size: 9px;
+    color: #888;
+    margin-top: 4px;
+}
+
+.btn-update-password {
+    margin-top: 16px;
+    background: var(--color-text);
+    color: var(--color-bg);
+    border: none;
+    padding: 20px;
+    font-size: 14px;
+    font-weight: 900;
+    text-transform: uppercase;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.btn-update-password:hover {
+    background: var(--color-accent);
+}
+
+/* ПРАВАЯ ТАБЛИЦА С ИСТОРИЕЙ */
+.profile-bookings {
+    grid-column: 6 / 13;
+}
+
+.profile-bookings h2 {
+    font-size: 32px;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    margin-top: 16px;
+    margin-bottom: 40px;
+}
+
+.booking-item {
+    border-top: 2px solid var(--color-text);
+    padding: 24px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.booking-item:last-child {
+    border-bottom: 2px solid var(--color-text);
+}
+
+.booking-main {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.booking-car {
+    font-size: 24px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+}
+
+.booking-dates {
+    font-size: 14px;
+    font-weight: 700;
+    color: #555;
+}
+
+.booking-meta {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+.booking-price {
+    font-size: 20px;
+    font-weight: 900;
+}
+
+.booking-status {
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border: 1px solid var(--color-text);
+    display: inline-block;
+}
+
+.status-active {
+    background-color: var(--color-text);
+    color: var(--color-bg);
+}
+
+.status-cancelled {
+    background-color: var(--color-accent);
+    color: var(--color-bg);
+    border-color: var(--color-accent);
+}
+
+/* Кнопка отмены в швейцарском минимализме */
+.btn-cancel-booking {
+    background: transparent;
+    border: 2px solid var(--color-accent);
+    color: var(--color-accent);
+    padding: 6px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 900;
+    cursor: pointer;
+    text-transform: uppercase;
+    margin-top: 8px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.btn-cancel-booking:hover {
+    background: var(--color-accent);
+    color: var(--color-bg);
+}
+
+@media (max-width: 900px) {
+    .profile-info {
+        grid-column: 1 / -1;
+        margin-bottom: 60px;
+    }
+
+    .profile-bookings {
+        grid-column: 1 / -1;
+    }
+
+    .booking-item {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .booking-meta {
+        text-align: left;
+        align-items: flex-start;
+    }
+}
