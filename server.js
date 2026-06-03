@@ -13,5 +13,4 @@ app.use('/api', apiRoutes);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`[SYS] Сервер запущен: http://localhost:${PORT}`);
-    console.log(`[SYS] Архитектура: MVC.`);
 });
