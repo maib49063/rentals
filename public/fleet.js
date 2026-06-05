@@ -61,27 +61,119 @@ document.addEventListener('DOMContentLoaded', () => {
             const article = document.createElement('article');
             article.className = 'car-card';
             article.innerHTML = `
-                <div class="car-img"><img src="${imgSrc}" alt="${car.model}"></div>
-                <h2>${car.model}</h2>
+                <div class="car-img clickable-area"><img src="${imgSrc}" alt="${car.model}"></div>
+                <h2 class="clickable-area">${car.model}</h2>
                 <ul class="specs"><li>Класс: ${car.category.toUpperCase()}</li></ul>
                 <div class="price">${car.price_per_day} ₽ / СУТКИ</div>
                 <button class="btn-rent" data-model="${car.model}">Арендовать</button>
             `;
             catalog.appendChild(article);
-        });
 
-        document.querySelectorAll('.btn-rent').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                document.getElementById('modal-model-name').textContent = e.target.getAttribute('data-model');
+            // Клик по кнопке "Арендовать" из сетки
+            article.querySelector('.btn-rent').addEventListener('click', (e) => {
+                openBookingModal(car.model);
+            });
 
-                // АВТОЗАПОЛНЕНИЕ ДАТ ИЗ ПОИСКА В МОДАЛКУ
-                if (searchStart.value) document.getElementById('start_date').value = searchStart.value;
-                if (searchEnd.value) document.getElementById('end_date').value = searchEnd.value;
-
-                document.getElementById('booking-modal').classList.add('is-open');
-                document.body.style.overflow = 'hidden';
+            // Клик по фото или заголовку - открытие страницы спецификации
+            article.querySelectorAll('.clickable-area').forEach(el => {
+                el.addEventListener('click', () => openCarDetails(car));
             });
         });
+    }
+
+    // Вынесли открытие модалки бронирования в отдельную функцию
+    function openBookingModal(modelName) {
+        document.getElementById('modal-model-name').textContent = modelName;
+        if (searchStart.value) document.getElementById('start_date').value = searchStart.value;
+        if (searchEnd.value) document.getElementById('end_date').value = searchEnd.value;
+        document.getElementById('booking-modal').classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // --- НОВАЯ ЛОГИКА: ПОЛНОЭКРАННАЯ КАРТОЧКА ---
+    const detailsOverlay = document.getElementById('car-details-overlay');
+    const closeDetailsBtn = document.getElementById('close-details-btn');
+    const detailsBody = document.getElementById('details-body');
+    const otherCarsGrid = document.getElementById('other-cars-grid');
+
+    closeDetailsBtn.addEventListener('click', () => {
+        detailsOverlay.classList.remove('is-open');
+        document.body.style.overflow = '';
+    });
+
+    function openCarDetails(car) {
+        // Разбираем строку регламента из базы данных, делим по строкам и оборачиваем в <li>
+        let techListHtml = '';
+        if (car.tech_regulations) {
+            techListHtml = car.tech_regulations
+                .split('\n')
+                .filter(line => line.trim() !== '')
+                .map(line => `<li>> ${line.trim().toUpperCase()}</li>`)
+                .join('');
+        } else {
+            // Запасной дефолтный вариант на случай отсутствия регламента в базе данных
+            techListHtml = `
+                <li>> ПРИВОД: 2WD / 4WD СИСТЕМА</li>
+                <li>> ТРАНСМИССИЯ: АВТОМАТИЧЕСКАЯ</li>
+                <li>> СТРАХОВКА: КАСКО (БЕЗ ФРАНШИЗЫ)</li>
+                <li>> ТЕЛЕМАТИКА: ВСТРОЕННЫЙ КОМПЛЕКС</li>
+                <li>> ТОПЛИВО: АИ-95 / ДТ (ВКЛЮЧЕНО)</li>
+            `;
+        }
+
+        // Отрисовка основной информации об автомобиле
+        const imgSrc = car.image_url || 'https://images.unsplash.com/photo-1563720360172-67b8f3dce741?q=80&w=1000&auto=format&fit=crop';
+        detailsBody.innerHTML = `
+            <div class="details-image-container">
+                <img src="${imgSrc}" alt="${car.model}">
+            </div>
+            <div class="details-info-container">
+                <div class="mono" style="color:var(--color-accent); font-weight:700; margin-bottom:8px;">[CLASS: ${car.category.toUpperCase()}]</div>
+                <h1 class="details-title">${car.model}</h1>
+                <div class="tech-reglament-box">
+                    <div style="font-size:14px; font-weight:900; margin-bottom:16px; text-transform:uppercase;">ТЕХНИЧЕСКИЙ РЕГЛАМЕНТ АВТОМОБИЛЯ</div>
+                    <ul>
+                        ${techListHtml}
+                    </ul>
+                </div>
+                <div class="details-price-row">
+                    <div style="font-size:12px; font-weight:700;">ТАРИФ:</div>
+                    <div class="details-price">${car.price_per_day} ₽/СУТ</div>
+                </div>
+                <button class="details-btn-rent" data-model="${car.model}">ИНИЦИАЛИЗИРОВАТЬ АРЕНДУ</button>
+            </div>
+        `;
+
+        // Клик "Инициализировать аренду" внутри страницы авто
+        detailsBody.querySelector('.details-btn-rent').addEventListener('click', (e) => {
+            detailsOverlay.classList.remove('is-open'); // закрываем спецификацию
+            openBookingModal(car.model); // открываем окно оплаты
+        });
+
+        // Отрисовка блока "Другие авто" (берем 3 штуки, кроме текущей)
+        otherCarsGrid.innerHTML = '';
+        const otherCars = allCars.filter(c => c.id !== car.id).slice(0, 3);
+
+        otherCars.forEach(otherCar => {
+            const otherImg = otherCar.image_url || 'https://images.unsplash.com/photo-1563720360172-67b8f3dce741?q=80&w=1000&auto=format&fit=crop';
+            const article = document.createElement('article');
+            article.className = 'car-card other-car-card clickable-area';
+            article.innerHTML = `
+                <div class="car-img"><img src="${otherImg}" alt="${otherCar.model}"></div>
+                <h2 style="padding: 16px 16px 8px; font-size: 20px;">${otherCar.model}</h2>
+                <div class="price" style="padding: 16px;">${otherCar.price_per_day} ₽ / СУТ</div>
+            `;
+            // При клике на "другое авто" обновляем содержимое окна с эффектом скролла
+            article.addEventListener('click', () => {
+                detailsOverlay.scrollTo({ top: 0, behavior: 'smooth' });
+                setTimeout(() => openCarDetails(otherCar), 150); // Небольшая задержка для плавности
+            });
+            otherCarsGrid.appendChild(article);
+        });
+
+        // Показываем окно
+        detailsOverlay.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
     }
 
     const filterBtns = document.querySelectorAll('.filter-btn');
@@ -111,16 +203,27 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         let isValid = true;
         const inputs = form.querySelectorAll('input[required]');
-        // ДОБАВЛЕНО ПРАВИЛО ДЛЯ КАРТЫ (ровно 16 цифр)
+        // ПРАВИЛО ДЛЯ КАРТЫ (ровно 16 цифр)
         const rules = { passport: /^\d{4}\s\d{6}$/, license: /^.{10}$/, phone: /^\+7\d{10}$/, card_number: /^\d{16}$/ };
 
         inputs.forEach(input => {
-            const val = input.value.trim();
-            if (val === '' || (rules[input.name] && !rules[input.name].test(val))) {
-                input.classList.add('error');
-                isValid = false;
+            // Специальная проверка для чекбокса
+            if (input.type === 'checkbox') {
+                if (!input.checked) {
+                    input.classList.add('error');
+                    isValid = false;
+                } else {
+                    input.classList.remove('error');
+                }
             } else {
-                input.classList.remove('error');
+                // Стандартная проверка для текста/дат
+                const val = input.value.trim();
+                if (val === '' || (rules[input.name] && !rules[input.name].test(val))) {
+                    input.classList.add('error');
+                    isValid = false;
+                } else {
+                    input.classList.remove('error');
+                }
             }
         });
 
@@ -179,8 +282,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Очистка ошибки при вводе текста ИЛИ клике по чекбоксу
     form.querySelectorAll('input').forEach(input => {
-        input.addEventListener('input', () => { if (input.classList.contains('error')) input.classList.remove('error'); });
+        input.addEventListener('input', () => {
+            if (input.classList.contains('error')) input.classList.remove('error');
+        });
+        input.addEventListener('change', () => {
+            if (input.type === 'checkbox' && input.classList.contains('error')) input.classList.remove('error');
+        });
     });
 
     // Загрузка по умолчанию без дат

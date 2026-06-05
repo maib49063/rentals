@@ -71,6 +71,27 @@
         </nav>
         <section class="fleet-grid grid-container" id="catalog"></section>
     </main>
+    
+    <!-- ФУЛЛСКРИН ОВЕРЛЕЙ ДЕТАЛЕЙ АВТО -->
+    <div class="car-details-overlay" id="car-details-overlay">
+        <div class="details-header grid-container">
+            <div class="details-logo">РЕНТАЛС // СПЕЦИФИКАЦИЯ</div>
+            <button class="btn-close-details mono" id="close-details-btn">[ ЗАКРЫТЬ ]</button>
+        </div>
+
+        <!-- Сюда скрипт вставит фото, регламент и цену -->
+        <div class="details-body grid-container" id="details-body"></div>
+
+        <div class="other-cars-section grid-container">
+            <h2
+                style="grid-column: 1/-1; border-top: 3px solid var(--color-text); padding-top: 32px; margin-bottom: 40px; font-size: 24px; font-weight: 900; text-transform: uppercase;">
+                СМЕЖНЫЕ КЛАССЫ // ДРУГИЕ АВТО</h2>
+            <!-- Сюда скрипт вставит 3 другие машины -->
+            <div class="other-cars-grid" id="other-cars-grid"
+                style="grid-column: 1/-1; display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--grid-gap);">
+            </div>
+        </div>
+    </div>
 
     <aside class="modal" id="booking-modal">
         <div class="modal-inner">
@@ -111,7 +132,16 @@
                     <span class="error-msg">Обязательное поле. Только 16 цифр без пробелов.</span>
                 </div>
 
+                <!-- ДОБАВЛЕННЫЙ БЛОК: СОГЛАСИЕ -->
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="consent" name="consent" required>
+                    <label for="consent">Я даю согласие на обработку персональных данных и принимаю условия договора
+                        аренды (оферты).</label>
+                    <span class="error-msg">Для продолжения необходимо ваше согласие.</span>
+                </div>
+
                 <button type="submit" class="btn-submit">ОПЛАТИТЬ И ЗАБРОНИРОВАТЬ</button>
+
             </form>
         </div>
     </aside>

@@ -38,6 +38,8 @@ const bcrypt = require('bcrypt'); // Добавь на самый верх publi
 // --- ДОБАВИТЬ В api.routes.js ---
 router.put('/profile/password', authenticateToken, publicCtrl.changePassword);
 router.put('/bookings/:id/cancel', authenticateToken, publicCtrl.cancelBooking);
+// Генерация PDF-документа
+router.get('/bookings/:id/document', authenticateToken, publicCtrl.getBookingDocument);
 
 // --- ДОБАВИТЬ В api.routes.js ---
 router.post('/auth/forgot-password', authCtrl.requestResetCode); // Шаг 1: отправка кода

@@ -90,7 +90,8 @@
         }
 
         .form-block input,
-        .form-block select {
+        .form-block select,
+        .form-block textarea {
             width: 100%;
             margin-bottom: 10px;
             padding: 5px;
@@ -98,21 +99,22 @@
             color: #0f0;
             border: 1px solid #0f0;
             font-family: monospace;
+            box-sizing: border-box;
         }
 
         /* Стили для модалки редактирования */
         .edit-modal {
             display: none;
             position: fixed;
-            top: 30%;
+            top: 20%;
             left: 50%;
-            transform: translate(-50%, -30%);
+            transform: translate(-50%, -20%);
             background: #000;
             border: 2px solid #0f0;
             padding: 20px;
             z-index: 100;
             box-shadow: 0 0 20px #0f0;
-            width: 400px;
+            width: 450px;
         }
 
         .edit-modal.active {
@@ -180,6 +182,10 @@
             </select>
             <label>Цена за сутки (₽):</label>
             <input type="number" name="price_per_day" required placeholder="1000">
+
+            <label>Технический регламент (каждая характеристика с новой строки):</label>
+            <textarea name="tech_regulations" rows="6" placeholder="ПРИВОД: ПОЛНЫЙ&#10;КОРОБКА: АВТОМАТ"></textarea>
+
             <label>Фотография машины:</label>
             <input type="file" name="image" accept="image/*" required>
             <button type="submit" style="width: 100%; padding: 10px; margin-top: 10px;">ДОБАВИТЬ В АВТОПАРК</button>
@@ -190,7 +196,7 @@
     <div class="modal-overlay" id="modal-overlay"></div>
     <div class="edit-modal" id="edit-modal">
         <h2 style="margin-top:0;">РЕДАКТИРОВАНИЕ</h2>
-        <form id="edit-car-form" class="form-block" style="border:none; padding:0; margin:0;">
+        <form id="edit-car-form" class="form-block" style="border:none; padding:0; margin:0; max-width: 100%;">
             <input type="hidden" id="edit-id">
             <label>Класс:</label>
             <select id="edit-category" required>
@@ -199,8 +205,12 @@
                 <option value="business">Бизнес</option>
                 <option value="special">Спецтехника</option>
             </select>
-            <label>Новая цена (₽/мин):</label>
+            <label>Новая цена (₽/сутки):</label>
             <input type="number" id="edit-price" required>
+
+            <label>Технический регламент (каждая характеристика с новой строки):</label>
+            <textarea id="edit-tech" rows="6"></textarea>
+
             <div style="display:flex; justify-content:space-between; margin-top: 15px;">
                 <button type="submit">СОХРАНИТЬ</button>
                 <button type="button" class="cancel-btn" onclick="closeEditModal()">ОТМЕНА</button>
@@ -212,6 +222,8 @@
         const token = localStorage.getItem('token');
         if (!token) { alert('Доступ закрыт. Авторизуйтесь как администратор.'); window.location.href = '/auth.html'; }
         const headers = { 'Authorization': `Bearer ${token}` };
+
+        let adminCars = []; // Хранилище списка авто на клиенте
 
         async function loadBookings() {
             try {
@@ -236,6 +248,7 @@
             try {
                 const res = await fetch('/api/admin/cars', { headers });
                 const data = await res.json();
+                adminCars = data.cars; // Сохраняем массив машин
                 const tbody = document.getElementById('admin-cars-list');
                 tbody.innerHTML = '';
                 if (data.cars.length === 0) { tbody.innerHTML = '<tr><td colspan="5">Автопарк пуст.</td></tr>'; return; }
@@ -246,7 +259,7 @@
                         <tr>
                             <td>${car.model}</td><td>${car.category.toUpperCase()}</td><td>${car.price_per_day}</td><td>[${status}]</td>
                             <td class="action-cell">
-                                <button onclick="openEditModal('${car.id}', '${car.category}', '${car.price_per_day}')">Изменить цену/класс</button>
+                                <button onclick="openEditModal('${car.id}')">Изменить параметры</button>
                                 <button class="delete-btn" onclick="deleteCar('${car.id}')">Списать машину</button>
                                 <div class="photo-upload-container">
                                     <input type="file" id="photo-${car.id}" accept="image/*">
@@ -292,11 +305,15 @@
             } catch (err) { alert('Ошибка: ' + err.message); }
         }
 
-        // Логика модалки редактирования
-        function openEditModal(id, category, price) {
-            document.getElementById('edit-id').value = id;
-            document.getElementById('edit-category').value = category;
-            document.getElementById('edit-price').value = price;
+        // Заполнение полей из сохраненного массива машин во избежание багов экранирования кавычек
+        function openEditModal(id) {
+            const car = adminCars.find(c => c.id === id);
+            if (!car) return;
+
+            document.getElementById('edit-id').value = car.id;
+            document.getElementById('edit-category').value = car.category;
+            document.getElementById('edit-price').value = car.price_per_day;
+            document.getElementById('edit-tech').value = car.tech_regulations || '';
             document.getElementById('edit-modal').classList.add('active');
             document.getElementById('modal-overlay').classList.add('active');
         }
@@ -311,12 +328,13 @@
             const id = document.getElementById('edit-id').value;
             const category = document.getElementById('edit-category').value;
             const price = document.getElementById('edit-price').value;
+            const tech = document.getElementById('edit-tech').value;
 
             try {
                 const res = await fetch(`/api/admin/cars/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ category: category, price_per_day: price })
+                    body: JSON.stringify({ category: category, price_per_day: price, tech_regulations: tech })
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error);
@@ -342,4 +360,4 @@
     </script>
 </body>
 
-</html> 
+</html>

@@ -1,6 +1,53 @@
 const pool = require('../config/db');
 const fs = require('fs');
 const path = require('path');
+const PDFDocument = require('pdfkit');
+const bcrypt = require('bcrypt');
+
+// Супер-надежная функция скачивания шрифта с резервными ссылками
+const ensureFontExists = async (fontPath) => {
+    // 1. Проверяем, существует ли файл и не битый ли он
+    if (fs.existsSync(fontPath)) {
+        const stats = fs.statSync(fontPath);
+        // Настоящий шрифт весит около 160КБ. Если меньше 50КБ — это битый файл (ошибка 404)
+        if (stats.size > 50000) return;
+        fs.unlinkSync(fontPath); // Удаляем битый файл
+    }
+
+    const fontDir = path.dirname(fontPath);
+    if (!fs.existsSync(fontDir)) fs.mkdirSync(fontDir, { recursive: true });
+
+    console.log('[SYS] Скачивание кириллического шрифта для PDF...');
+
+    // 2. Список 100% рабочих и надежных ссылок на шрифт Roboto Regular
+    const urls = [
+        'https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.1/fonts/roboto/Roboto-Regular.ttf',
+        'https://raw.githubusercontent.com/googlefonts/roboto/main/src/hinted/Roboto-Regular.ttf'
+    ];
+
+    let lastError = null;
+
+    // 3. Пробуем скачать по очереди
+    for (const fontUrl of urls) {
+        try {
+            const response = await fetch(fontUrl);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+
+            fs.writeFileSync(fontPath, buffer);
+            console.log(`[SYS] Шрифт успешно загружен из: ${fontUrl}`);
+            return; // Успех! Выходим из функции
+        } catch (err) {
+            console.log(`[SYS] Ссылка недоступна: ${fontUrl}`);
+            lastError = err;
+        }
+    }
+
+    // Если все ссылки упали
+    throw new Error(`Не удалось скачать шрифт. Последняя ошибка: ${lastError.message}`);
+};
 
 exports.getSlider = (req, res) => {
     const sliderDir = path.join(__dirname, '../public/slider');
@@ -65,7 +112,6 @@ exports.bookCar = async (req, res) => {
             await client.query('UPDATE users SET passport = $1, license = $2 WHERE id = $3', [passport, license, userId]);
         }
 
-        // Берем price_per_day
         const carRes = await client.query('SELECT id, is_available, price_per_day FROM cars WHERE model = $1 AND is_deleted = false', [car_model]);
         if (carRes.rows.length === 0) {
             await client.query('ROLLBACK');
@@ -88,7 +134,6 @@ exports.bookCar = async (req, res) => {
             return res.status(409).json({ error: 'Машина уже забронирована на эти даты.' });
         }
 
-        // Адекватный подсчет дней
         const days = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
         const totalAmount = days * pricePerDay;
 
@@ -114,8 +159,6 @@ exports.bookCar = async (req, res) => {
         client.release();
     }
 };
-
-// --- ДОБАВИТЬ В КОНЕЦ public.controller.js ---
 
 exports.getProfile = async (req, res) => {
     const userId = req.user.id;
@@ -147,7 +190,6 @@ exports.updateProfile = async (req, res) => {
     const userId = req.user.id;
     const { passport, license } = req.body;
 
-    // Валидация на скорую руку (на бэке она обязательна)
     if (passport && !/^\d{4}\s\d{6}$/.test(passport)) {
         return res.status(400).json({ error: 'Неверный формат паспорта.' });
     }
@@ -162,8 +204,6 @@ exports.updateProfile = async (req, res) => {
         res.status(500).json({ error: 'Ошибка обновления профиля.' });
     }
 };
-
-// --- ДОБАВИТЬ В КОНЕЦ public.controller.js ---
 
 exports.changePassword = async (req, res) => {
     const userId = req.user.id;
@@ -195,7 +235,6 @@ exports.cancelBooking = async (req, res) => {
     const bookingId = req.params.id;
 
     try {
-        // Проверяем, что бронь реально существует, активна и принадлежит этому юзеру
         const bookingRes = await pool.query(
             "SELECT id FROM bookings WHERE id = $1 AND user_id = $2 AND status = 'active'",
             [bookingId, userId]
@@ -209,5 +248,131 @@ exports.cancelBooking = async (req, res) => {
         res.json({ message: 'Бронирование успешно аннулировано.' });
     } catch (err) {
         res.status(500).json({ error: 'Ошибка сервера при отмене бронирования.' });
+    }
+};
+
+// ГЕНЕРАЦИЯ PDF СКАЧИВАЕМОГО ЧЕКА
+exports.getBookingDocument = async (req, res) => {
+    const userId = req.user.id;
+    const bookingId = req.params.id;
+
+    try {
+        // Убеждаемся, что шрифт существует
+        const fontPath = path.join(__dirname, '../fonts/Roboto-Regular.ttf');
+        await ensureFontExists(fontPath);
+
+        const result = await pool.query(`
+            SELECT b.id AS booking_id, b.start_date, b.end_date, b.created_at, b.status AS booking_status,
+                   c.model, c.category, c.price_per_day,
+                   p.amount, p.transaction_external_id, p.created_at AS payment_date,
+                   u.email, u.passport, u.license
+            FROM bookings b
+            JOIN cars c ON b.car_id = c.id
+            JOIN payments p ON p.booking_id = b.id
+            JOIN users u ON b.user_id = u.id
+            WHERE b.id = $1 AND b.user_id = $2
+        `, [bookingId, userId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Документ не найден или нет доступа.' });
+        }
+
+        const data = result.rows[0];
+
+        const start = new Date(data.start_date);
+        const end = new Date(data.end_date);
+        const days = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+        const totalAmount = parseFloat(data.amount) || 0;
+        const pricePerDay = parseFloat(data.price_per_day) || 0;
+        const tax = (totalAmount * 0.2 / 1.2).toFixed(2);
+
+        const doc = new PDFDocument({ margin: 50, size: 'A4' });
+
+        // ВАЖНО: Сначала подключаем шрифт. Если он сломан, вылетит ошибка, и мы не сломаем поток ответа
+        doc.font(fontPath);
+
+        // Безопасно отдаем заголовки и подключаем поток к клиенту только когда всё 100% готово
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="RENTALS_RECEIPT_${data.booking_id.substring(0, 8)}.pdf"`);
+        doc.pipe(res);
+
+        doc.fontSize(22).text('РЕНТАЛС // СИСТЕМА', { align: 'left' });
+        doc.fontSize(10).fillColor('#666666').text('МАРШРУТНАЯ КВИТАНЦИЯ И ЭЛЕКТРОННЫЙ ЧЕК', { align: 'left' });
+
+        doc.fontSize(8).fillColor('#000000');
+        doc.text('ООО "РЕНТАЛС ИНФРАСТРУКТУРА"', 350, 50, { align: 'right' });
+        doc.text('ИНН: 7700123456 | ОГРН: 1237700000000', 350, 65, { align: 'right' });
+        doc.text('Тел: 8 800 555 01 99 | sys@rentals.com', 350, 80, { align: 'right' });
+
+        doc.moveTo(50, 110).lineTo(545, 110).lineWidth(2).stroke();
+
+        doc.y = 130;
+        doc.fontSize(12).text('[ РЕКВИЗИТЫ ОПЕРАЦИИ ]', 50, doc.y);
+        doc.fontSize(10).moveDown(0.8);
+        doc.text(`СЧЕТ №:        ${data.booking_id.toUpperCase()}`);
+        doc.text(`ДАТА ОПЛАТЫ:   ${new Date(data.payment_date).toLocaleString('ru-RU')}`);
+        doc.text(`ТРАНЗАКЦИЯ ID: ${data.transaction_external_id}`);
+        doc.text(`МЕТОД ОПЛАТЫ:  БАНКОВСКАЯ КАРТА (ONLINE)`);
+        doc.text(`СТАТУС:        ${data.booking_status === 'active' ? 'ОПЛАЧЕНО / АКТИВНО' : 'АННУЛИРОВАНО'}`);
+
+        doc.moveDown(2);
+        doc.fontSize(12).text('[ ДАННЫЕ ОПЕРАТОРА (АРЕНДАТОРА) ]');
+        doc.fontSize(10).moveDown(0.8);
+        doc.text(`ПОЛЬЗОВАТЕЛЬ:  ${data.email}`);
+        doc.text(`ПАСПОРТ:       ${data.passport || 'НЕ ПРЕДОСТАВЛЕН'}`);
+        doc.text(`ВУ (ПРАВА):    ${data.license || 'НЕ ПРЕДОСТАВЛЕНЫ'}`);
+
+        doc.moveDown(2);
+        doc.fontSize(12).text('[ ИНФОРМАЦИЯ ОБ ОБЪЕКТЕ И ЛОКАЦИИ ]');
+        doc.fontSize(10).moveDown(0.8);
+        doc.text(`АВТОМОБИЛЬ:    ${data.model.toUpperCase()} (КЛАСС: ${data.category.toUpperCase()})`);
+        doc.text(`ПЕРИОД АРЕНДЫ: ${new Date(data.start_date).toLocaleDateString('ru-RU')} — ${new Date(data.end_date).toLocaleDateString('ru-RU')} (${days} ДН.)`);
+
+        doc.moveDown(0.5);
+        doc.text(`МЕСТО ВЫДАЧИ:  УЛ. БЕРЛИНСКАЯ 14, ТЕРМИНАЛ B, ЗОНА P1`);
+        doc.text(`МЕСТО ВОЗВРАТА:УЛ. БЕРЛИНСКАЯ 14, ТЕРМИНАЛ B, ЗОНА P1`);
+
+        doc.moveDown(2);
+        doc.moveTo(50, doc.y).lineTo(545, doc.y).lineWidth(1).stroke();
+        doc.moveDown(1);
+
+        doc.fontSize(10);
+        doc.text('НАИМЕНОВАНИЕ УСЛУГИ', 50, doc.y);
+        doc.text('ТАРИФ', 250, doc.y);
+        doc.text('КОЛ-ВО', 350, doc.y);
+        doc.text('СУММА', 450, doc.y, { width: 95, align: 'right' });
+
+        doc.moveDown(0.5);
+        doc.moveTo(50, doc.y).lineTo(545, doc.y).lineWidth(0.5).stroke();
+        doc.moveDown(0.5);
+
+        let rowY = doc.y;
+        doc.text(`АРЕНДА: ${data.model.toUpperCase()}`, 50, rowY);
+        doc.text(`${pricePerDay.toFixed(2)} RUB/СУТ`, 250, rowY);
+        doc.text(`${days} ДН.`, 350, rowY);
+        doc.text(`${totalAmount.toFixed(2)} RUB`, 450, rowY, { width: 95, align: 'right' });
+
+        doc.moveDown(1);
+        doc.moveTo(50, doc.y).lineTo(545, doc.y).lineWidth(1).stroke();
+        doc.moveDown(1);
+
+        doc.fontSize(10).text(`В ТОМ ЧИСЛЕ НДС (20%): ${tax} RUB`, { align: 'right' });
+        doc.moveDown(0.5);
+        doc.fontSize(16).text(`ИТОГО К ОПЛАТЕ: ${totalAmount.toFixed(2)} RUB`, { align: 'right' });
+
+        doc.moveDown(4);
+        doc.fontSize(8).fillColor('gray');
+        doc.text('НАСТОЯЩИЙ ДОКУМЕНТ ПОДТВЕРЖДАЕТ ФАКТ ЗАКЛЮЧЕНИЯ ДОГОВОРА ПРИСОЕДИНЕНИЯ (ОФЕРТЫ).', { align: 'center' });
+        doc.text('ОПЛАЧИВАЯ ДАННЫЙ СЧЕТ, АРЕНДАТОР СОГЛАШАЕТСЯ С ПРАВИЛАМИ ПОЛЬЗОВАНИЯ СЕРВИСОМ РЕНТАЛС.', { align: 'center' });
+        doc.text('ДОКУМЕНТ СГЕНЕРИРОВАН АВТОМАТИЧЕСКИ. ПОДПИСЬ И ПЕЧАТЬ НЕ ТРЕБУЮТСЯ СОГЛАСНО ФЗ-422.', { align: 'center' });
+
+        doc.end();
+
+    } catch (err) {
+        console.error('[SYS PDF ERROR]:', err);
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Ошибка генерации документа. ' + err.message });
+        }
     }
 };

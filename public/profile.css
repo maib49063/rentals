@@ -204,3 +204,33 @@
         align-items: flex-start;
     }
 }
+
+.booking-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    justify-content: flex-end;
+}
+
+.btn-receipt {
+    background: var(--color-text);
+    color: var(--color-bg);
+    border: 2px solid var(--color-text);
+    padding: 6px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 900;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.15s, color 0.15s;
+}
+
+.btn-receipt:hover {
+    background: transparent;
+    color: var(--color-text);
+}
+
+/* Фикс отступов у кнопки отмены, если нужно */
+.btn-cancel-booking {
+    margin-top: 0;
+}
