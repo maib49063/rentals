@@ -3,6 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { JWT_SECRET } = require('../middlewares/auth.middleware');
 
 // Супер-надежная функция скачивания шрифта с резервными ссылками
 const ensureFontExists = async (fontPath) => {
@@ -59,10 +61,40 @@ exports.getSlider = (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Ошибка сервера' }); }
 };
 
-exports.contact = (req, res) => {
+// Обработка формы контактов с сохранением в support_tickets
+exports.contact = async (req, res) => {
     const { name, email, message } = req.body;
-    console.log('[SYS] Новое сообщение:', { name, email, message });
-    res.json({ message: 'Сообщение успешно отправлено.' });
+
+    if (!email || !message) {
+        return res.status(400).json({ error: 'Email и сообщение обязательны для заполнения.' });
+    }
+
+    // Проверяем, авторизован ли пользователь (извлекаем токен из заголовка вручную, 
+    // чтобы форма работала и для неавторизованных гостей)
+    let userId = null;
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET);
+            userId = decoded.id; // Берем id из токена
+        } catch (err) {
+            // Если токен битый, просто игнорируем его и сохраняем как от гостя
+        }
+    }
+
+    try {
+        await pool.query(
+            `INSERT INTO support_tickets (user_id, email, message) VALUES ($1, $2, $3)`,
+            [userId, email, message]
+        );
+
+        console.log('[SYS] Новое обращение в поддержку:', { name, email, message });
+        res.status(201).json({ message: 'Данные успешно отправлены в ситуационный центр.' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Ошибка БД при сохранении обращения.' });
+    }
 };
 
 exports.getCars = async (req, res) => {
@@ -177,11 +209,20 @@ exports.getProfile = async (req, res) => {
             ORDER BY b.created_at DESC
         `, [userId]);
 
+        const ticketsRes = await pool.query(`
+            SELECT id, message, reply, status, created_at 
+            FROM support_tickets 
+            WHERE user_id = $1 
+            ORDER BY created_at DESC
+        `, [userId]);
+
         res.json({
             user: userRes.rows[0],
-            bookings: bookingsRes.rows
+            bookings: bookingsRes.rows,
+            tickets: ticketsRes.rows
         });
     } catch (err) {
+        console.error('[SYS GET PROFILE ERROR]:', err);
         res.status(500).json({ error: 'Ошибка загрузки профиля.' });
     }
 };

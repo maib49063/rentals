@@ -34,6 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Рендерим заказы
             renderBookings(data.bookings);
 
+            // Рендерим обращения в поддержку
+            renderTickets(data.tickets);
+
         } catch (err) {
             bookingsContainer.innerHTML = `<div class="mono" style="color:var(--color-accent); font-weight:bold;">ERR_LOAD: ${err.message}</div>`;
         }
@@ -138,40 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
-    // ОБРАБОТЧИК ДЛЯ СКАЧИВАНИЯ PDF
-    document.querySelectorAll('.btn-receipt').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const bookingId = e.target.getAttribute('data-id');
-            e.target.textContent = 'ГЕНЕРАЦИЯ...';
 
-            try {
-                // Запрашиваем PDF через fetch, чтобы передать Bearer токен авторизации
-                const res = await fetch(`/api/bookings/${bookingId}/document`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (!res.ok) throw new Error('Не удалось сгенерировать документ');
-
-                // Получаем файл как Blob
-                const blob = await res.blob();
-                const url = window.URL.createObjectURL(blob);
-
-                // Инициируем скачивание
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `RENTALS_DOC_${bookingId.substring(0, 8)}.pdf`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-
-                window.URL.revokeObjectURL(url);
-                e.target.textContent = 'ДОКУМЕНТ';
-            } catch (err) {
-                alert('ОШИБКА: ' + err.message);
-                e.target.textContent = 'ОШИБКА';
-            }
-        });
-    });
     // Обработка смены пароля
     passwordForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -209,5 +179,49 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    function renderTickets(tickets) {
+        const container = document.getElementById('tickets-container');
+        
+        // Защита, если HTML-блок еще не добавлен
+        if (!container) return; 
+
+        if (!tickets || tickets.length === 0) {
+            container.innerHTML = '<div class="mono" style="padding: 40px; border: 2px dashed #000; text-align: center;">ОБРАЩЕНИЙ НЕ НАЙДЕНО</div>';
+            return;
+        }
+
+        container.innerHTML = '';
+        tickets.forEach(ticket => {
+            const isAnswered = ticket.status === 'answered' && ticket.reply;
+            const statusColor = isAnswered ? 'var(--color-accent)' : '#888';
+            const statusText = isAnswered ? 'ОТВЕТ ПОЛУЧЕН' : 'В ОЖИДАНИИ';
+
+            const div = document.createElement('div');
+            div.style.border = '2px solid var(--color-text)';
+            div.style.padding = '24px';
+            div.style.marginBottom = '24px';
+            div.style.backgroundColor = 'var(--color-bg)';
+
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; border-bottom: 2px solid var(--color-text); padding-bottom: 8px; margin-bottom: 16px;">
+                    <span class="mono" style="font-weight: 700;">ЗАПРОС ОТ ${new Date(ticket.created_at).toLocaleDateString('ru-RU')}</span>
+                    <span class="mono" style="color: ${statusColor}; font-weight: 900;">[${statusText}]</span>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <div class="tech-label mono">ВЫ ПИСАЛИ:</div>
+                    <p style="margin: 8px 0; font-size: 14px;">${ticket.message}</p>
+                </div>
+                ${isAnswered ? `
+                <div style="background: #f4f4f4; padding: 16px; border-left: 4px solid var(--color-accent); margin-top: 16px;">
+                    <div class="tech-label mono" style="color: var(--color-accent);">ОТВЕТ АДМИНИСТРАТОРА:</div>
+                    <p style="margin: 8px 0 0 0; font-size: 14px; font-weight: 700;">${ticket.reply}</p>
+                </div>
+                ` : ''}
+            `;
+            container.appendChild(div);
+        });
+    }
+    
+    // Запуск загрузки профиля при открытии страницы
     loadProfile();
 });

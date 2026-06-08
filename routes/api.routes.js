@@ -41,6 +41,13 @@ router.put('/bookings/:id/cancel', authenticateToken, publicCtrl.cancelBooking);
 // Генерация PDF-документа
 router.get('/bookings/:id/document', authenticateToken, publicCtrl.getBookingDocument);
 
+// Маршруты для обычных пользователей / гостей
+router.post('/contact', handleContactForm); // Проверь, как называется твой метод
+
+// Админские маршруты (должны быть защищены мидлваром authenticateAdmin)
+router.get('/admin/tickets', authenticateAdmin, adminController.getTickets);
+router.post('/admin/tickets/:ticketId/reply', authenticateAdmin, adminController.replyTicket);
+
 // --- ДОБАВИТЬ В api.routes.js ---
 router.post('/auth/forgot-password', authCtrl.requestResetCode); // Шаг 1: отправка кода
 router.post('/auth/reset-password', authCtrl.resetPassword);       // Шаг 2: сброс по коду

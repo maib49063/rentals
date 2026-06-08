@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>РЕНТАЛС — Связь</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="contact.css">
 </head>
+
 <body>
     <div class="mobile-menu-overlay" id="mobile-menu">
         <div class="mobile-menu-header">
@@ -40,16 +44,28 @@
             <h1>Связь.</h1>
         </section>
         <section class="info-modules grid-container">
-            <div class="info-block"><div class="info-desc mono">[TEL]</div><div class="info-value">8 800 555 01 99</div></div>
-            <div class="info-block"><div class="info-desc mono">[MAIL]</div><div class="info-value">SYS@RENTALS.COM</div></div>
-            <div class="info-block"><div class="info-desc mono">[LOC]</div><div class="info-value">БЕРЛИНСКАЯ 14,<br>ТЕРМИНАЛ B</div></div>
+            <div class="info-block">
+                <div class="info-desc mono">[TEL]</div>
+                <div class="info-value">8 800 555 01 99</div>
+            </div>
+            <div class="info-block">
+                <div class="info-desc mono">[MAIL]</div>
+                <div class="info-value">SYS@RENTALS.COM</div>
+            </div>
+            <div class="info-block">
+                <div class="info-desc mono">[LOC]</div>
+                <div class="info-value">БЕРЛИНСКАЯ 14,<br>ТЕРМИНАЛ B</div>
+            </div>
         </section>
         <section class="contact-grid grid-container">
             <form id="contact-form" class="contact-form">
                 <div class="form-title">Запрос в систему</div>
-                <div class="form-group"><input type="text" id="name" name="name" placeholder="ИДЕНТИФИКАТОР (ИМЯ)" required></div>
-                <div class="form-group"><input type="email" id="email" name="email" placeholder="ЭЛЕКТРОННАЯ ПОЧТА" required></div>
-                <div class="form-group"><textarea id="message" name="message" placeholder="МАССИВ ДАННЫХ (СООБЩЕНИЕ)" required rows="4"></textarea></div>
+                <div class="form-group"><input type="text" id="name" name="name" placeholder="ИДЕНТИФИКАТОР (ИМЯ)"
+                        required></div>
+                <div class="form-group"><input type="email" id="email" name="email" placeholder="ЭЛЕКТРОННАЯ ПОЧТА"
+                        required></div>
+                <div class="form-group"><textarea id="message" name="message" placeholder="МАССИВ ДАННЫХ (СООБЩЕНИЕ)"
+                        required rows="4"></textarea></div>
                 <button type="submit" class="btn-submit">ОТПРАВИТЬ ДАННЫЕ</button>
             </form>
             <div class="socials-block">
@@ -67,18 +83,30 @@
             e.preventDefault();
             const formData = new FormData(form);
             const dataObj = Object.fromEntries(formData.entries());
+
+            // ПРОВЕРЯЕМ ТОКЕН: если пользователь вошел, привязываем сообщение к его профилю
+            const token = localStorage.getItem('token');
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             try {
                 const res = await fetch('/api/contact', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: headers,
                     body: JSON.stringify(dataObj)
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'СЕРВЕР НЕДОСТУПЕН');
-                alert(data.message);
+
+                alert('Ваше сообщение отправлено. Вы можете отслеживать статус в личном кабинете!');
                 form.reset();
-            } catch (err) { alert('ОШИБКА: ' + err.message); }
+            } catch (err) {
+                alert('ОШИБКА: ' + err.message);
+            }
         });
     </script>
 </body>
+
 </html>

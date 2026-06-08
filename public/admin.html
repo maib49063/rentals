@@ -191,7 +191,17 @@
             <button type="submit" style="width: 100%; padding: 10px; margin-top: 10px;">ДОБАВИТЬ В АВТОПАРК</button>
         </form>
     </div>
+    <section class="admin-section"
+        style="margin-top: 60px; border-top: 4px solid var(--color-text); padding-top: 40px;">
+        <div class="tech-label mono">[SYS.SUPPORT.CENTER]</div>
+        <h2 style="font-size: 32px; font-weight: 900; text-transform: uppercase; margin-bottom: 24px;">ОБРАЩЕНИЯ В
+            СЛУЖБУ ПОДДЕРЖКИ</h2>
 
+        <div id="admin-tickets-container" style="display: flex; flex-direction: column; gap: 24px;">
+            <div class="mono" style="padding: 40px; border: 2px dashed #000; text-align: center;">ЗАГРУЗКА ДАННЫХ ИЗ
+                СЕТИ...</div>
+        </div>
+    </section>
     <!-- МОДАЛКА РЕДАКТИРОВАНИЯ -->
     <div class="modal-overlay" id="modal-overlay"></div>
     <div class="edit-modal" id="edit-modal">
@@ -354,6 +364,106 @@
                 alert(data.message); e.target.reset(); loadAdminCars();
             } catch (err) { alert('Ошибка: ' + err.message); }
         });
+        // Вызови эту функцию при старте админки, где загружаются машины и бронирования
+        loadAdminTickets();
+
+        async function loadAdminTickets() {
+            const container = document.getElementById('admin-tickets-container');
+            try {
+                const res = await fetch('/api/admin/tickets', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (!res.ok) throw new Error('Ошибка сервера при чтении тикетов.');
+                const data = await res.json();
+
+                renderAdminTickets(data.tickets);
+            } catch (err) {
+                container.innerHTML = `<div class="mono" style="color:red; padding:20px; border:2px solid red;">ОШИБКА: ${err.message}</div>`;
+            }
+        }
+
+        function renderAdminTickets(tickets) {
+            const container = document.getElementById('admin-tickets-container');
+            if (!tickets || tickets.length === 0) {
+                container.innerHTML = '<div class="mono" style="padding:40px; border:2px dashed #000; text-align:center;">НЕТ НОВЫХ ОБРАЩЕНИЙ</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            tickets.forEach(ticket => {
+                const isPending = ticket.status === 'pending';
+                const statusText = isPending ? 'ТРЕБУЕТ ОТВЕТА' : 'ОБРАБОТАНО';
+                const borderColor = isPending ? 'var(--color-accent, #ff4d4d)' : 'var(--color-text, #000)';
+
+                const card = document.createElement('div');
+                card.style.border = `3px solid ${borderColor}`;
+                card.style.padding = '24px';
+                card.style.backgroundColor = '#fff';
+
+                card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--color-text); padding-bottom:8px; margin-bottom:16px;">
+                    <span class="mono" style="font-weight:900;">ОТ: ${ticket.email}</span>
+                    <span class="mono" style="font-weight:900; color:${isPending ? 'red' : 'green'};">[${statusText}]</span>
+                </div>
+                <div style="margin-bottom:20px;">
+                    <div class="tech-label mono" style="color:#666;">ТЕКСТ ОБРАЩЕНИЯ:</div>
+                    <p style="font-size:15px; margin:8px 0; background:#f9f9f9; padding:12px; border:1px solid #ddd;">${ticket.message}</p>
+                </div>
+                
+                ${isPending ? `
+                    <div>
+                        <div class="tech-label mono">[ВВОД_ОТВЕТА]</div>
+                        <textarea id="reply-text-${ticket.id}" style="width:100%; min-height:80px; padding:12px; font-family:inherit; border:2px solid #000; margin-top:8px; resize:vertical;" placeholder="Напишите ответ пользователю..."></textarea>
+                        <button class="btn-reply-submit" data-id="${ticket.id}" style="margin-top:12px; background:#000; color:#fff; border:none; padding:10px 20px; font-family:inherit; font-weight:900; cursor:pointer; text-transform:uppercase;">ОТПРАВИТЬ ОТВЕТ</button>
+                    </div>
+                ` : `
+                    <div style="background:#eef7ee; padding:12px; border-left:4px solid green;">
+                        <div class="tech-label mono" style="color:green;">НАШ ОТВЕТ:</div>
+                        <p style="font-size:14px; margin:4px 0 0 0; font-weight:700;">${ticket.reply}</p>
+                    </div>
+                `}
+            `;
+                container.appendChild(card);
+            });
+
+            // Навешиваем события на кнопки отправки ответа
+            container.querySelectorAll('.btn-reply-submit').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const ticketId = e.target.getAttribute('data-id');
+                    const replyTextArea = document.getElementById(`reply-text-${ticketId}`);
+                    const replyValue = replyTextArea.value;
+
+                    if (!replyValue.trim()) {
+                        alert('Введите текст перед отправкой!');
+                        return;
+                    }
+
+                    try {
+                        e.target.disabled = true;
+                        e.target.textContent = 'ОТПРАВКА...';
+
+                        const res = await fetch(`/api/admin/tickets/${ticketId}/reply`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            },
+                            body: JSON.stringify({ reply: replyValue })
+                        });
+
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.error || 'Не удалось отправить ответ.');
+
+                        alert('ОТВЕТ ЗАФИКСИРОВАН В СИСТЕМЕ');
+                        loadAdminTickets(); // Перезагружаем список
+                    } catch (err) {
+                        alert('ОШИБКА: ' + err.message);
+                        e.target.disabled = false;
+                        e.target.textContent = 'ОТПРАВИТЬ ОТВЕТ';
+                    }
+                });
+            });
+        }
 
         loadBookings();
         loadAdminCars();

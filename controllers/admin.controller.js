@@ -78,3 +78,42 @@ exports.deleteCar = async (req, res) => {
         res.json({ message: 'Машина списана.' });
     } catch (err) { res.status(500).json({ error: 'Ошибка БД.' }); }
 };
+
+// Получить все тикеты пользователей для админки
+exports.getTickets = async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT id, email, message, reply, status, created_at 
+            FROM support_tickets 
+            ORDER BY status DESC, created_at DESC
+        `);
+        res.json({ tickets: result.rows });
+    } catch (err) {
+        res.status(500).json({ error: 'Ошибка БД при получении обращений.' });
+    }
+};
+
+// Ответить на тикет
+exports.replyTicket = async (req, res) => {
+    const { ticketId } = req.params;
+    const { reply } = req.body;
+
+    if (!reply || reply.trim() === '') {
+        return res.status(400).json({ error: 'Текст ответа не может быть пустым.' });
+    }
+
+    try {
+        const result = await pool.query(
+            `UPDATE support_tickets SET reply = $1, status = 'answered' WHERE id = $2 RETURNING *`,
+            [reply, ticketId]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Обращение не найдено.' });
+        }
+
+        res.json({ message: 'Ответ успешно отправлен.', ticket: result.rows[0] });
+    } catch (err) {
+        res.status(500).json({ error: 'Ошибка сервера при сохранении ответа.' });
+    }
+};
