@@ -27,7 +27,8 @@ exports.getCars = async (req, res) => {
 
 exports.addCar = async (req, res) => {
     const { model, category, price_per_day, tech_regulations } = req.body;
-    let imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    // ИЗМЕНЕНО: теперь берем полный URL-путь из Cloudinary
+    let imageUrl = req.file ? req.file.path : null;
     try {
         await pool.query(
             `INSERT INTO cars (model, category, price_per_day, image_url, tech_regulations) VALUES ($1, $2, $3, $4, $5)`,
@@ -39,7 +40,8 @@ exports.addCar = async (req, res) => {
 
 exports.updatePhoto = async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'Файл не прикреплен.' });
-    const imageUrl = `/uploads/${req.file.filename}`;
+    // ИЗМЕНЕНО: теперь берем полный URL-путь из Cloudinary
+    const imageUrl = req.file.path;
     try {
         await pool.query(`UPDATE cars SET image_url = $1 WHERE id = $2`, [imageUrl, req.params.id]);
         res.json({ message: 'Обновлено.', image_url: imageUrl });
