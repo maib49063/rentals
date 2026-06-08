@@ -1,27 +1,22 @@
 const pool = require('../config/db');
 const fs = require('fs');
 const path = require('path');
+const os = require('os'); // Добавлено для работы с Vercel /tmp
 const PDFDocument = require('pdfkit');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../middlewares/auth.middleware');
 
-// Супер-надежная функция скачивания шрифта с резервными ссылками
+// Функция скачивания шрифта во временную папку Vercel (/tmp)
 const ensureFontExists = async (fontPath) => {
-    // 1. Проверяем, существует ли файл и не битый ли он
     if (fs.existsSync(fontPath)) {
         const stats = fs.statSync(fontPath);
-        // Настоящий шрифт весит около 160КБ. Если меньше 50КБ — это битый файл (ошибка 404)
         if (stats.size > 50000) return;
-        fs.unlinkSync(fontPath); // Удаляем битый файл
+        fs.unlinkSync(fontPath);
     }
-
-    const fontDir = path.dirname(fontPath);
-    if (!fs.existsSync(fontDir)) fs.mkdirSync(fontDir, { recursive: true });
 
     console.log('[SYS] Скачивание кириллического шрифта для PDF...');
 
-    // 2. Список 100% рабочих и надежных ссылок на шрифт Roboto Regular
     const urls = [
         'https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.1/fonts/roboto/Roboto-Regular.ttf',
         'https://raw.githubusercontent.com/googlefonts/roboto/main/src/hinted/Roboto-Regular.ttf'
@@ -29,7 +24,6 @@ const ensureFontExists = async (fontPath) => {
 
     let lastError = null;
 
-    // 3. Пробуем скачать по очереди
     for (const fontUrl of urls) {
         try {
             const response = await fetch(fontUrl);
@@ -40,15 +34,13 @@ const ensureFontExists = async (fontPath) => {
 
             fs.writeFileSync(fontPath, buffer);
             console.log(`[SYS] Шрифт успешно загружен из: ${fontUrl}`);
-            return; // Успех! Выходим из функции
+            return;
         } catch (err) {
-            console.log(`[SYS] Ссылка недоступна: ${fontUrl}`);
             lastError = err;
         }
     }
 
-    // Если все ссылки упали
-    throw new Error(`Не удалось скачать шрифт. Последняя ошибка: ${lastError.message}`);
+    throw new Error(`Не удалось скачать шрифт. Ошибка: ${lastError.message}`);
 };
 
 exports.getSlider = (req, res) => {
@@ -61,26 +53,21 @@ exports.getSlider = (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Ошибка сервера' }); }
 };
 
-// Обработка формы контактов с сохранением в support_tickets
 exports.contact = async (req, res) => {
     const { name, email, message } = req.body;
 
     if (!email || !message) {
-        return res.status(400).json({ error: 'Email и сообщение обязательны для заполнения.' });
+        return res.status(400).json({ error: 'Email и сообщение обязательны.' });
     }
 
-    // Проверяем, авторизован ли пользователь (извлекаем токен из заголовка вручную, 
-    // чтобы форма работала и для неавторизованных гостей)
     let userId = null;
     const authHeader = req.headers['authorization'];
     if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.split(' ')[1];
         try {
             const decoded = jwt.verify(token, JWT_SECRET);
-            userId = decoded.id; // Берем id из токена
-        } catch (err) {
-            // Если токен битый, просто игнорируем его и сохраняем как от гостя
-        }
+            userId = decoded.id;
+        } catch (err) { }
     }
 
     try {
@@ -88,11 +75,8 @@ exports.contact = async (req, res) => {
             `INSERT INTO support_tickets (user_id, email, message) VALUES ($1, $2, $3)`,
             [userId, email, message]
         );
-
-        console.log('[SYS] Новое обращение в поддержку:', { name, email, message });
         res.status(201).json({ message: 'Данные успешно отправлены в ситуационный центр.' });
     } catch (err) {
-        console.error(err);
         res.status(500).json({ error: 'Ошибка БД при сохранении обращения.' });
     }
 };
@@ -250,15 +234,9 @@ exports.changePassword = async (req, res) => {
     const userId = req.user.id;
     const { password, password_confirm } = req.body;
 
-    if (!password || !password_confirm) {
-        return res.status(400).json({ error: 'Заполните оба поля пароля.' });
-    }
-    if (password !== password_confirm) {
-        return res.status(400).json({ error: 'Пароли не совпадают.' });
-    }
-    if (password.length < 8 || !/\d/.test(password)) {
-        return res.status(400).json({ error: 'Пароль должен быть не менее 8 символов и содержать минимум одну цифру.' });
-    }
+    if (!password || !password_confirm) return res.status(400).json({ error: 'Заполните оба поля пароля.' });
+    if (password !== password_confirm) return res.status(400).json({ error: 'Пароли не совпадают.' });
+    if (password.length < 8 || !/\d/.test(password)) return res.status(400).json({ error: 'Пароль должен быть не менее 8 символов и содержать минимум одну цифру.' });
 
     try {
         const salt = await bcrypt.genSalt(10);
@@ -276,14 +254,8 @@ exports.cancelBooking = async (req, res) => {
     const bookingId = req.params.id;
 
     try {
-        const bookingRes = await pool.query(
-            "SELECT id FROM bookings WHERE id = $1 AND user_id = $2 AND status = 'active'",
-            [bookingId, userId]
-        );
-
-        if (bookingRes.rows.length === 0) {
-            return res.status(404).json({ error: 'Активное бронирование не найдено.' });
-        }
+        const bookingRes = await pool.query("SELECT id FROM bookings WHERE id = $1 AND user_id = $2 AND status = 'active'", [bookingId, userId]);
+        if (bookingRes.rows.length === 0) return res.status(404).json({ error: 'Активное бронирование не найдено.' });
 
         await pool.query("UPDATE bookings SET status = 'cancelled' WHERE id = $1", [bookingId]);
         res.json({ message: 'Бронирование успешно аннулировано.' });
@@ -292,14 +264,13 @@ exports.cancelBooking = async (req, res) => {
     }
 };
 
-// ГЕНЕРАЦИЯ PDF СКАЧИВАЕМОГО ЧЕКА
 exports.getBookingDocument = async (req, res) => {
     const userId = req.user.id;
     const bookingId = req.params.id;
 
     try {
-        // Убеждаемся, что шрифт существует
-        const fontPath = path.join(__dirname, '../fonts/Roboto-Regular.ttf');
+        // ИЗМЕНЕНО ДЛЯ VERCEL: Записываем шрифт во временную папку сервера
+        const fontPath = path.join(os.tmpdir(), 'Roboto-Regular.ttf');
         await ensureFontExists(fontPath);
 
         const result = await pool.query(`
@@ -314,40 +285,31 @@ exports.getBookingDocument = async (req, res) => {
             WHERE b.id = $1 AND b.user_id = $2
         `, [bookingId, userId]);
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Документ не найден или нет доступа.' });
-        }
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Документ не найден.' });
 
         const data = result.rows[0];
-
         const start = new Date(data.start_date);
         const end = new Date(data.end_date);
         const days = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-
         const totalAmount = parseFloat(data.amount) || 0;
         const pricePerDay = parseFloat(data.price_per_day) || 0;
         const tax = (totalAmount * 0.2 / 1.2).toFixed(2);
 
         const doc = new PDFDocument({ margin: 50, size: 'A4' });
 
-        // ВАЖНО: Сначала подключаем шрифт. Если он сломан, вылетит ошибка, и мы не сломаем поток ответа
         doc.font(fontPath);
-
-        // Безопасно отдаем заголовки и подключаем поток к клиенту только когда всё 100% готово
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="RENTALS_RECEIPT_${data.booking_id.substring(0, 8)}.pdf"`);
         doc.pipe(res);
 
         doc.fontSize(22).text('РЕНТАЛС // СИСТЕМА', { align: 'left' });
         doc.fontSize(10).fillColor('#666666').text('МАРШРУТНАЯ КВИТАНЦИЯ И ЭЛЕКТРОННЫЙ ЧЕК', { align: 'left' });
-
         doc.fontSize(8).fillColor('#000000');
         doc.text('ООО "РЕНТАЛС ИНФРАСТРУКТУРА"', 350, 50, { align: 'right' });
         doc.text('ИНН: 7700123456 | ОГРН: 1237700000000', 350, 65, { align: 'right' });
         doc.text('Тел: 8 800 555 01 99 | sys@rentals.com', 350, 80, { align: 'right' });
 
         doc.moveTo(50, 110).lineTo(545, 110).lineWidth(2).stroke();
-
         doc.y = 130;
         doc.fontSize(12).text('[ РЕКВИЗИТЫ ОПЕРАЦИИ ]', 50, doc.y);
         doc.fontSize(10).moveDown(0.8);
@@ -409,11 +371,8 @@ exports.getBookingDocument = async (req, res) => {
         doc.text('ДОКУМЕНТ СГЕНЕРИРОВАН АВТОМАТИЧЕСКИ. ПОДПИСЬ И ПЕЧАТЬ НЕ ТРЕБУЮТСЯ СОГЛАСНО ФЗ-422.', { align: 'center' });
 
         doc.end();
-
     } catch (err) {
         console.error('[SYS PDF ERROR]:', err);
-        if (!res.headersSent) {
-            res.status(500).json({ error: 'Ошибка генерации документа. ' + err.message });
-        }
+        if (!res.headersSent) res.status(500).json({ error: 'Ошибка генерации документа.' });
     }
 };
